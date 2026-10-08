@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Controle de Horas • Estágio</title>
+    <link rel="stylesheet" href="css/index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+    <header class="topbar">
+
+        <div class="brand">
+            CONTROLE DE HORAS • ESTÁGIO
+        </div>
+
+        <div class="top-actions">
+            <button onclick="exportData()">Exportar PDF</button>
+
+            <label class="btn-file">
+                Importar
+                <input type="file" id="importFile" accept=".json" onchange="importData(event)" hidden>
+            </label>
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         NAVEGAÇÃO
+    ========================== -->
+
+    <nav class="navbar">
+        <button class="nav-btn active" onclick="showPage('dashboard', this)">
+            Dashboard
+        </button>
+        <button class="nav-btn" onclick="showPage('lancamentos', this)">
+            Lançamentos
+        </button>
+        <button class="nav-btn" onclick="showPage('resumo', this)">
+            Resumo mensal
+        </button>
+    </nav>
+
+
+    <main>
+        <section id="dashboard" class="page active">
+            <div class="page-header">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p>Acompanhe suas horas de estágio.</p>
+                </div>
+                <div>
+                    <label for="monthDash">Mês</label>
+                    <input type="month" id="monthDash" value="2026-10" onchange="setMonth(this.value)">
+                </div>
+            </div>
+
+            <!-- AVISO -->
+
+            <div class="notice">
+                <strong>Como usar</strong>
+                <p>
+                    Cadastre suas atividades na aba Lançamentos.
+                    O sistema calcula automaticamente suas horas,
+                    meta mensal e saldo.
+                </p>
+            </div>
+
+
+            <!-- MÉTRICAS -->
+
+            <div class="metrics-grid">
+
+                <div class="metric-card">
+                    <span>Total realizado</span>
+                    <strong id="mTotal">0h</strong>
+                </div>
+
+                <div class="metric-card">
+                    <span>Meta</span>
+                    <strong id="mMeta">0h</strong>
+                </div>
+
+                <div class="metric-card">
+                    <span>Saldo</span>
+                    <strong id="mSaldo">0h</strong>
+                </div>
+
+                <div class="metric-card">
+                    <span>Progresso</span>
+                    <strong id="mPct">0%</strong>
+                </div>
+
+                <div class="metric-card">
+                    <span>Média diária</span>
+                    <strong id="mMedia">0h</strong>
+                </div>
+
+                <div class="metric-card">
+                    <span>Dias trabalhados</span>
+                    <strong id="mDias">0</strong>
+                </div>
+
+                <div class="metric-card">
+                    <span>Dias OK</span>
+                    <strong id="mOk">0</strong>
+                </div>
+
+                <div class="metric-card">
+                    <span>Pendentes</span>
+                    <strong id="mPend">0</strong>
+                </div>
+
+            </div>
+
+
+            <!-- GRÁFICOS -->
+
+            <div class="charts-grid">
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <h2>Horas por dia</h2>
+                    </div>
+
+                    <div id="dayChart" class="chart"></div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <h2>Horas por categoria</h2>
+                    </div>
+
+                    <div id="categoryChart" class="chart"></div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TABELA -->
+
+            <div class="card">
+
+                <div class="card-header">
+                    <h2>Resumo diário</h2>
+                </div>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Horas</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="dashboardTable"></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+        </section>
+
+
+
+        <!-- =====================================================
+             LANÇAMENTOS
+        ====================================================== -->
+
+        <section id="lancamentos" class="page">
+
+            <div class="page-header">
+
+                <div>
+                    <h1>Lançamentos</h1>
+
+                    <p>
+                        Registre e consulte suas atividades.
+                    </p>
+                </div>
+
+                <button class="primary-btn" onclick="openLancModal()">
+                    + Novo lançamento
+                </button>
+
+            </div>
+
+
+            <!-- =========================
+                 FILTROS
+            ========================== -->
+
+            <div class="card filters-card">
+
+                <div class="card-header">
+
+                    <div>
+                        <h2>Filtros</h2>
+
+                        <p>
+                            Encontre rapidamente os lançamentos.
+                        </p>
+                    </div>
+
+                    <button class="secondary-btn" onclick="clearLancFilters()">
+                        Limpar filtros
+                    </button>
+
+                </div>
+
+
+                <div class="filters-grid">
+
+                    <!-- DIA -->
+
+                    <div class="filter-group">
+
+                        <label for="filterDate">
+                            Ver por dia
+                        </label>
+
+                        <input type="date" id="filterDate" onchange="renderLanc()">
+
+                    </div>
+
+
+                    <!-- MÊS -->
+
+                    <div class="filter-group">
+
+                        <label for="filterMonth">
+                            Ver por mês
+                        </label>
+
+                        <input type="month" id="filterMonth" onchange="renderLanc()">
+
+                    </div>
+
+
+                    <!-- CATEGORIA -->
+
+                    <div class="filter-group">
+
+                        <label for="filterCategory">
+                            Categoria
+                        </label>
+
+                        <select id="filterCategory" onchange="renderLanc()">
+
+                            <option value="">
+                                Todas as categorias
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- BUSCA -->
+
+                    <div class="filter-group">
+
+                        <label for="filterSearch">
+                            Buscar atividade
+                        </label>
+
+                        <input type="text" id="filterSearch" placeholder="Digite uma atividade..."
+                            oninput="renderLanc()">
+
+                    </div>
+
+                </div>
+
+
+                <!-- RESUMO DOS FILTROS -->
+
+                <div class="filter-summary">
+
+                    <span>
+                        Lançamentos encontrados:
+                        <strong id="filterCount">0</strong>
+                    </span>
+
+                    <span>
+                        Total:
+                        <strong id="filterTotal">0h</strong>
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 TABELA
+            ========================== -->
+
+            <div class="card">
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>Data</th>
+                                <th>Atividade</th>
+                                <th>Categoria</th>
+                                <th>Horas</th>
+                                <th>Observação</th>
+                                <th>Ações</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="lancTable"></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- =====================================================
+             RESUMO MENSAL
+        ====================================================== -->
+
+        <section id="resumo" class="page">
+
+            <div class="page-header">
+
+                <div>
+
+                    <h1>Resumo mensal</h1>
+
+                    <p>
+                        Consulte o resultado de cada mês.
+                    </p>
+
+                </div>
+
+                <input type="month" id="monthResumo" value="2026-10" onchange="renderResumo()">
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>Mês</th>
+                                <th>Total</th>
+                                <th>Meta</th>
+                                <th>Saldo</th>
+                                <th>Progresso</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="resumoTable"></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- =====================================================
+         MODAL DE LANÇAMENTO
+    ====================================================== -->
+
+    <div id="modalLanc" class="modal">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h2>Novo lançamento</h2>
+
+                <button onclick="closeModals()">×</button>
+
+            </div>
+
+
+            <div class="form-grid">
+
+                <div>
+
+                    <label for="lData">
+                        Data
+                    </label>
+
+                    <input type="date" id="lData">
+
+                </div>
+
+
+                <div>
+
+                    <label for="lHoras">
+                        Horas
+                    </label>
+
+                    <input type="time" id="lHoras" value="01:00">
+
+                </div>
+
+
+                <div class="full">
+
+                    <label for="lAtividade">
+                        Atividade
+                    </label>
+
+                    <input type="text" id="lAtividade" placeholder="Ex.: Reunião de alinhamento">
+
+                </div>
+
+
+                <div>
+
+                    <label for="lCategoria">
+                        Categoria
+                    </label>
+
+                    <select id="lCategoria"></select>
+
+                </div>
+
+
+                <div class="full">
+
+                    <label for="lObs">
+                        Observação
+                    </label>
+
+                    <textarea id="lObs" rows="4" placeholder="Observações..."></textarea>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-actions">
+
+                <button class="secondary-btn" onclick="closeModals()">
+                    Cancelar
+                </button>
+
+                <button class="primary-btn" onclick="saveLanc()">
+                    Salvar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script>
+
+        /* =========================
+           DADOS INICIAIS
+        ========================== */
+
+        const INITIAL = {
+
+            lancamentos: []
+
+        };
+
+
+        /* =========================
+           CONFIGURAÇÕES
+        ========================== */
+
+        const CATEGORIES = [
+            "Documentação",
+            "Reunião",
+            "Análise",
+            "Auditoria",
+            "Treinamento",
+            "Organização",
+            "E-mail/Comunicação",
+            "Pesquisa",
+            "Atendimento",
+            "Planejamento",
+            "Outros"
+        ];
+
+        const STORAGE_KEY = "controleHorasEstagio";
+
+        let db = JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+        ) || INITIAL;
+
+        if (!Array.isArray(db.lancamentos)) {
+            db.lancamentos = [];
+        }
+
+        if (db.agenda) {
+            delete db.agenda;
+            saveDB();
+        }
+
+        let currentMonth = "2026-10";
+
+        let editingLancIndex = null;
+
+
+
+        /* =========================
+           BANCO LOCAL
+        ========================== */
+
+        function saveDB() {
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(db)
+            );
+
+        }
+
+
+
+        /* =========================
+           MÊS
+        ========================== */
+
+        function setMonth(month) {
+            currentMonth = month;
+            document.getElementById("monthDash").value = month;
+            renderAll();
+        }
+
+        /* =========================
+           NAVEGAÇÃO
+        ========================== */
+
+        function showPage(page, button) {
+
+            const pages =
+                document.querySelectorAll(".page");
+
+            pages.forEach(function (item) {
+
+                item.classList.remove("active");
+
+            });
+
+
+            document
+                .getElementById(page)
+                .classList.add("active");
+
+
+            const buttons =
+                document.querySelectorAll(".nav-btn");
+
+            buttons.forEach(function (item) {
+
+                item.classList.remove("active");
+
+            });
+
+
+            if (button) {
+
+                button.classList.add("active");
+
+            }
+
+            renderAll();
+
+        }
+
+
+
+        /* =========================
+           CONVERSÕES
+        ========================== */
+
+        function minsToHours(minutes) {
+
+            const hours = Math.floor(minutes / 60);
+
+            const mins = minutes % 60;
+
+            return `${hours}h ${String(mins).padStart(2, "0")}min`;
+
+        }
+
+
+        function hmToMinutes(value) {
+
+            if (!value) {
+                return 0;
+            }
+
+            const parts = value.split(":");
+
+            const hours = Number(parts[0]);
+
+            const minutes = Number(parts[1]);
+
+            return hours * 60 + minutes;
+
+        }
+
+
+        function minsToTime(minutes) {
+
+            const hours =
+                Math.floor(minutes / 60);
+
+            const mins =
+                minutes % 60;
+
+            return (
+                String(hours).padStart(2, "0") +
+                ":" +
+                String(mins).padStart(2, "0")
+            );
+
+        }
+
+
+        function fmtDate(date) {
+
+            if (!date) {
+                return "";
+            }
+
+            const parts = date.split("-");
+
+            return (
+                parts[2] +
+                "/" +
+                parts[1] +
+                "/" +
+                parts[0]
+            );
+
+        }
+
+
+
+        /* =========================
+           DATAS
+        ========================== */
+
+        function isWeekday(date) {
+
+            const day =
+                new Date(
+                    date + "T12:00:00"
+                ).getDay();
+
+            return day !== 0 && day !== 6;
+
+        }
+
+
+        function daysInMonth(month) {
+
+            const parts = month.split("-");
+
+            const year = Number(parts[0]);
+
+            const monthNumber = Number(parts[1]);
+
+            return new Date(
+                year,
+                monthNumber,
+                0
+            ).getDate();
+
+        }
+
+
+
+        /* =========================
+           LANÇAMENTOS DO MÊS
+        ========================== */
+
+        function monthEntries(month) {
+
+            return db.lancamentos.filter(function (item) {
+
+                return item.data.startsWith(month);
+
+            });
+
+        }
+
+
+        function minutesForDate(date) {
+
+            return db.lancamentos
+                .filter(function (item) {
+
+                    return item.data === date;
+
+                })
+                .reduce(function (total, item) {
+
+                    return total + item.minutos;
+
+                }, 0);
+
+        }
+
+
+
+        /* =========================
+           CÁLCULOS
+        ========================== */
+
+        function calc(month) {
+
+            const entries =
+                monthEntries(month);
+
+            let total = 0;
+
+            entries.forEach(function (item) {
+
+                total += item.minutos;
+
+            });
+
+
+            const days =
+                daysInMonth(month);
+
+            let weekdays = 0;
+
+            let workedDays = 0;
+
+            let okDays = 0;
+
+            let pendingDays = 0;
+
+            for (
+                let day = 1;
+                day <= days;
+                day++
+            ) {
+
+                const date =
+                    month +
+                    "-" +
+                    String(day).padStart(2, "0");
+
+
+                if (isWeekday(date)) {
+
+                    weekdays++;
+
+                    const minutes =
+                        minutesForDate(date);
+
+
+                    if (minutes > 0) {
+
+                        workedDays++;
+
+                    }
+
+
+                    if (minutes === 360) {
+
+                        okDays++;
+
+                    }
+
+
+                    if (minutes < 360) {
+
+                        pendingDays++;
+
+                    }
+
+                }
+
+            }
+
+
+            const meta =
+                weekdays * 360;
+
+
+            const saldo =
+                total - meta;
+
+
+            const pct =
+                meta > 0
+                    ? Math.round((total / meta) * 100)
+                    : 0;
+
+
+            const media =
+                workedDays > 0
+                    ? Math.round(total / workedDays)
+                    : 0;
+
+
+            return {
+                total,
+                meta,
+                saldo,
+                pct,
+                media,
+                workedDays,
+                okDays,
+                pendingDays
+            };
+
+        }
+
+
+
+        /* =========================
+           DASHBOARD
+        ========================== */
+
+        function renderDashboard() {
+
+            const c =
+                calc(currentMonth);
+
+
+            document.getElementById("mTotal")
+                .textContent =
+                minsToHours(c.total);
+
+
+            document.getElementById("mMeta")
+                .textContent =
+                minsToHours(c.meta);
+
+
+            document.getElementById("mSaldo")
+                .textContent =
+                (c.saldo >= 0 ? "+" : "-") +
+                minsToHours(Math.abs(c.saldo));
+
+
+            document.getElementById("mPct")
+                .textContent =
+                c.pct + "%";
+
+
+            document.getElementById("mMedia")
+                .textContent =
+                minsToHours(c.media);
+
+
+            document.getElementById("mDias")
+                .textContent =
+                c.workedDays;
+
+
+            document.getElementById("mOk")
+                .textContent =
+                c.okDays;
+
+
+            document.getElementById("mPend")
+                .textContent =
+                c.pendingDays;
+
+
+
+            /* =========================
+               TABELA DIÁRIA
+            ========================== */
+
+            const tbody =
+                document.getElementById(
+                    "dashboardTable"
+                );
+
+            tbody.innerHTML = "";
+
+
+            const days =
+                daysInMonth(currentMonth);
+
+            const monthHasEntries =
+                monthEntries(currentMonth).length > 0;
+
+            if (!monthHasEntries) {
+
+                const row =
+                    document.createElement("tr");
+
+                row.innerHTML = `
+                    <td
+                        colspan="3"
+                        class="empty-state"
+                    >
+                        Nada inserido ainda
+                    </td>
+                `;
+
+                tbody.appendChild(row);
+
+            }
+
+            for (
+                let day = 1;
+                day <= days && monthHasEntries;
+                day++
+            ) {
+
+                const date =
+                    currentMonth +
+                    "-" +
+                    String(day).padStart(2, "0");
+
+
+                const minutes =
+                    minutesForDate(date);
+
+
+                let status = "";
+
+
+                if (!isWeekday(date)) {
+
+                    status = "Fim de semana";
+
+                } else if (minutes === 360) {
+
+                    status = "OK";
+
+                } else if (minutes > 360) {
+
+                    status = "Acima da meta";
+
+                } else {
+
+                    status = "Pendente";
+
+                }
+
+
+                const row =
+                    document.createElement("tr");
+
+
+                row.innerHTML = `
+                    <td>${fmtDate(date)}</td>
+                    <td>${minsToHours(minutes)}</td>
+                    <td>${status}</td>
+                `;
+
+
+                tbody.appendChild(row);
+
+            }
+
+
+
+            /* =========================
+               GRÁFICO POR DIA
+            ========================== */
+
+            const dayChart =
+                document.getElementById(
+                    "dayChart"
+                );
+
+            dayChart.innerHTML = "";
+
+            if (!monthHasEntries) {
+                dayChart.innerHTML = `<div class="empty-state">Nada inserido ainda</div>`;
+            }
+
+            for (
+                let day = 1;
+                day <= days;
+                day++
+            ) {
+
+                const date =
+                    currentMonth +
+                    "-" +
+                    String(day).padStart(2, "0");
+
+
+                const minutes =
+                    minutesForDate(date);
+
+
+                if (minutes === 0) {
+                    continue;
+                }
+
+
+                const percentage =
+                    Math.min(
+                        (minutes / 360) * 100,
+                        100
+                    );
+
+
+                const item =
+                    document.createElement("div");
+
+                item.className = "bar-item";
+
+
+                item.innerHTML = `
+
+                    <div class="bar-label">
+                        ${String(day).padStart(2, "0")}
+                    </div>
+
+                    <div class="bar">
+                        <div
+                            class="bar-fill"
+                            style="width:${percentage}%"
+                        ></div>
+                    </div>
+
+                    <div class="bar-value">
+                        ${minsToHours(minutes)}
+                    </div>
+
+                `;
+
+
+                dayChart.appendChild(item);
+
+            }
+
+
+
+            /* =========================
+               GRÁFICO POR CATEGORIA
+            ========================== */
+
+            const categoryChart =
+                document.getElementById(
+                    "categoryChart"
+                );
+
+            categoryChart.innerHTML = "";
+
+            if (!monthHasEntries) {
+                categoryChart.innerHTML = `<div class="empty-state">Nada inserido ainda</div>`;
+            }
+
+
+            const categories = {};
+
+
+            monthEntries(currentMonth)
+                .forEach(function (item) {
+
+                    if (!categories[item.categoria]) {
+
+                        categories[item.categoria] = 0;
+
+                    }
+
+                    categories[item.categoria] +=
+                        item.minutos;
+
+                });
+
+
+            Object.keys(categories)
+                .forEach(function (category) {
+
+                    const minutes =
+                        categories[category];
+
+
+                    const percentage =
+                        c.total > 0
+                            ? (minutes / c.total) * 100
+                            : 0;
+
+
+                    const item =
+                        document.createElement("div");
+
+                    item.className =
+                        "category-item";
+
+
+                    item.innerHTML = `
+
+                        <div class="category-top">
+                            <span>${category}</span>
+                            <strong>
+                                ${minsToHours(minutes)}
+                            </strong>
+                        </div>
+
+                        <div class="bar">
+                            <div
+                                class="bar-fill"
+                                style="width:${percentage}%"
+                            ></div>
+                        </div>
+
+                    `;
+
+
+                    categoryChart.appendChild(item);
+
+                });
+
+        }
+
+
+
+        /* =====================================================
+           FILTROS DE LANÇAMENTOS
+        ====================================================== */
+
+        function renderLancFilters() {
+
+            const select =
+                document.getElementById(
+                    "filterCategory"
+                );
+
+
+            select.innerHTML = `
+                <option value="">
+                    Todas as categorias
+                </option>
+            `;
+
+
+            CATEGORIES.forEach(function (category) {
+
+                const option =
+                    document.createElement("option");
+
+                option.value = category;
+
+                option.textContent = category;
+
+                select.appendChild(option);
+
+            });
+
+
+            const lancCategory =
+                document.getElementById(
+                    "lCategoria"
+                );
+
+
+            lancCategory.innerHTML = "";
+
+
+            CATEGORIES.forEach(function (category) {
+
+                const option =
+                    document.createElement("option");
+
+                option.value = category;
+
+                option.textContent = category;
+
+                lancCategory.appendChild(option);
+
+            });
+
+        }
+
+
+
+        function getFilteredLancamentos() {
+
+            const filterDate =
+                document.getElementById(
+                    "filterDate"
+                ).value;
+
+
+            const filterMonth =
+                document.getElementById(
+                    "filterMonth"
+                ).value;
+
+
+            const filterCategory =
+                document.getElementById(
+                    "filterCategory"
+                ).value;
+
+
+            const search =
+                document.getElementById(
+                    "filterSearch"
+                ).value
+                    .toLowerCase()
+                    .trim();
+
+
+            return db.lancamentos.filter(function (item) {
+
+                /* FILTRO POR DIA */
+
+                if (
+                    filterDate &&
+                    item.data !== filterDate
+                ) {
+
+                    return false;
+
+                }
+
+
+                /* FILTRO POR MÊS */
+
+                if (
+                    filterMonth &&
+                    !item.data.startsWith(filterMonth)
+                ) {
+
+                    return false;
+
+                }
+
+
+                /* FILTRO POR CATEGORIA */
+
+                if (
+                    filterCategory &&
+                    item.categoria !== filterCategory
+                ) {
+
+                    return false;
+
+                }
+
+
+                /* FILTRO POR TEXTO */
+
+                if (search) {
+
+                    const atividade =
+                        item.atividade
+                            .toLowerCase();
+
+
+                    const observacao =
+                        (item.obs || "")
+                            .toLowerCase();
+
+
+                    if (
+                        !atividade.includes(search) &&
+                        !observacao.includes(search)
+                    ) {
+
+                        return false;
+
+                    }
+
+                }
+
+
+                return true;
+
+            });
+
+        }
+
+
+
+        function clearLancFilters() {
+
+            document.getElementById(
+                "filterDate"
+            ).value = "";
+
+
+            document.getElementById(
+                "filterMonth"
+            ).value = "";
+
+
+            document.getElementById(
+                "filterCategory"
+            ).value = "";
+
+
+            document.getElementById(
+                "filterSearch"
+            ).value = "";
+
+
+            renderLanc();
+
+        }
+
+
+
+        /* =====================================================
+           RENDER LANÇAMENTOS
+        ====================================================== */
+
+        function renderLanc() {
+
+            const tbody =
+                document.getElementById(
+                    "lancTable"
+                );
+
+
+            tbody.innerHTML = "";
+
+
+            const filtered =
+                getFilteredLancamentos();
+
+
+            filtered.sort(function (a, b) {
+
+                return b.data.localeCompare(a.data);
+
+            });
+
+
+            let totalFiltered = 0;
+
+
+            filtered.forEach(function (item) {
+
+                totalFiltered += item.minutos;
+
+
+                const index =
+                    db.lancamentos.indexOf(item);
+
+
+                const row =
+                    document.createElement("tr");
+
+
+                row.innerHTML = `
+
+                    <td>
+                        ${fmtDate(item.data)}
+                    </td>
+
+                    <td>
+                        ${item.atividade}
+                    </td>
+
+                    <td>
+                        ${item.categoria}
+                    </td>
+
+                    <td>
+                        ${minsToHours(item.minutos)}
+                    </td>
+
+                    <td>
+                        ${item.obs || "-"}
+                    </td>
+
+                    <td>
+
+                        <button
+                            class="table-btn"
+                            onclick="editLancamento(${index})"
+                        >
+                            Editar
+                        </button>
+
+                        <button
+                            class="table-btn danger"
+                            onclick="deleteLanc(${index})"
+                        >
+                            Excluir
+                        </button>
+
+                    </td>
+
+                `;
+
+
+                tbody.appendChild(row);
+
+            });
+
+
+            document.getElementById(
+                "filterCount"
+            ).textContent =
+                filtered.length;
+
+
+            document.getElementById(
+                "filterTotal"
+            ).textContent =
+                minsToHours(totalFiltered);
+
+
+            if (filtered.length === 0) {
+
+                const row =
+                    document.createElement("tr");
+
+
+                row.innerHTML = `
+
+                    <td
+                        colspan="6"
+                        class="empty-state"
+                    >
+                        Nada inserido ainda
+                    </td>
+
+                `;
+
+
+                tbody.appendChild(row);
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           SALVAR LANÇAMENTO
+        ====================================================== */
+
+        function openLancModal(index = null) {
+
+            editingLancIndex = index;
+
+
+            document.getElementById(
+                "modalLanc"
+            ).classList.add("show");
+
+
+            if (index !== null) {
+
+                const item =
+                    db.lancamentos[index];
+
+
+                document.getElementById(
+                    "lData"
+                ).value = item.data;
+
+
+                document.getElementById(
+                    "lHoras"
+                ).value =
+                    minsToTime(item.minutos);
+
+
+                document.getElementById(
+                    "lAtividade"
+                ).value =
+                    item.atividade;
+
+
+                document.getElementById(
+                    "lCategoria"
+                ).value =
+                    item.categoria;
+
+
+                document.getElementById(
+                    "lObs"
+                ).value =
+                    item.obs || "";
+
+            } else {
+
+                document.getElementById(
+                    "lData"
+                ).value = "";
+
+
+                document.getElementById(
+                    "lHoras"
+                ).value = "01:00";
+
+
+                document.getElementById(
+                    "lAtividade"
+                ).value = "";
+
+
+                document.getElementById(
+                    "lCategoria"
+                ).value = "Documentação";
+
+
+                document.getElementById(
+                    "lObs"
+                ).value = "";
+
+            }
+
+        }
+
+
+        function saveLanc() {
+
+            const data =
+                document.getElementById(
+                    "lData"
+                ).value;
+
+
+            const horas =
+                document.getElementById(
+                    "lHoras"
+                ).value;
+
+
+            const atividade =
+                document.getElementById(
+                    "lAtividade"
+                ).value.trim();
+
+
+            const categoria =
+                document.getElementById(
+                    "lCategoria"
+                ).value;
+
+
+            const obs =
+                document.getElementById(
+                    "lObs"
+                ).value.trim();
+
+
+            if (
+                !data ||
+                !horas ||
+                !atividade
+            ) {
+
+                alert(
+                    "Preencha os campos obrigatórios."
+                );
+
+                return;
+
+            }
+
+
+            const item = {
+
+                data,
+                atividade,
+                categoria,
+                minutos: hmToMinutes(horas),
+                obs
+
+            };
+
+
+            if (editingLancIndex === null) {
+
+                db.lancamentos.push(item);
+
+            } else {
+
+                db.lancamentos[
+                    editingLancIndex
+                ] = item;
+
+            }
+
+
+            saveDB();
+
+            closeModals();
+
+            renderAll();
+
+        }
+
+
+
+        function editLancamento(index) {
+
+            openLancModal(index);
+
+        }
+
+
+
+        function deleteLanc(index) {
+
+            const confirmacao =
+                confirm(
+                    "Deseja realmente excluir este lançamento?"
+                );
+
+
+            if (!confirmacao) {
+                return;
+            }
+
+
+            db.lancamentos.splice(index, 1);
+
+            saveDB();
+
+            renderAll();
+
+        }
+
+
+
+        /* =====================================================
+           RESUMO
+        ====================================================== */
+
+        function renderResumo() {
+
+            const month =
+                document.getElementById(
+                    "monthResumo"
+                ).value;
+
+
+            const tbody =
+                document.getElementById(
+                    "resumoTable"
+                );
+
+
+            tbody.innerHTML = "";
+
+
+            if (!month) {
+                return;
+            }
+
+
+            const c =
+                calc(month);
+
+
+            const row =
+                document.createElement("tr");
+
+
+            row.innerHTML = `
+
+                <td>
+                    ${month}
+                </td>
+
+                <td>
+                    ${minsToHours(c.total)}
+                </td>
+
+                <td>
+                    ${minsToHours(c.meta)}
+                </td>
+
+                <td>
+                    ${(c.saldo >= 0 ? "+" : "-")}
+                    ${minsToHours(Math.abs(c.saldo))}
+                </td>
+
+                <td>
+                    ${c.pct}%
+                </td>
+
+            `;
+
+
+            tbody.appendChild(row);
+
+        }
+
+
+
+        /* =====================================================
+           MODAIS
+        ====================================================== */
+
+        function closeModals() {
+
+            document
+                .querySelectorAll(".modal")
+                .forEach(function (modal) {
+
+                    modal.classList.remove("show");
+
+                });
+
+
+            editingLancIndex = null;
+
+
+        }
+
+
+        function esc(event) {
+
+            if (event.key === "Escape") {
+
+                closeModals();
+
+            }
+
+        }
+
+
+        document.addEventListener(
+            "keydown",
+            esc
+        );
+
+
+
+        /* =====================================================
+           EXPORTAR
+        ====================================================== */
+
+        function exportData() {
+
+            const { jsPDF } = window.jspdf;
+
+            const pdf = new jsPDF();
+
+            const month = currentMonth;
+
+            const entries = monthEntries(month);
+
+            let total = 0;
+
+            entries.forEach(function (item) {
+                total += Number(item.minutos);
+            });
+
+            const days = {};
+
+            entries.forEach(function (item) {
+
+                if (!days[item.data]) {
+                    days[item.data] = 0;
+                }
+
+                days[item.data] += Number(item.minutos);
+
+            });
+
+            const workedDays = Object.keys(days).length;
+
+            const average = workedDays > 0
+                ? Math.round(total / workedDays)
+                : 0;
+
+            const meta = Object.keys(days).length * 6 * 60;
+
+            const saldo = total - meta;
+
+            const progresso = meta > 0
+                ? Math.min(100, Math.round((total / meta) * 100))
+                : 0;
+
+            pdf.setFontSize(18);
+            pdf.text("Controle de Horas • Estágio", 20, 20);
+
+            pdf.setFontSize(11);
+            pdf.text(`Mês: ${month}`, 20, 30);
+
+            pdf.setFontSize(14);
+            pdf.text("Resumo", 20, 45);
+
+            pdf.setFontSize(10);
+            pdf.text(`Total realizado: ${minsToHours(total)}`, 20, 55);
+            pdf.text(`Meta: ${minsToHours(meta)}`, 20, 62);
+            pdf.text(`Saldo: ${minsToHours(saldo)}`, 20, 69);
+            pdf.text(`Progresso: ${progresso}%`, 20, 76);
+            pdf.text(`Dias trabalhados: ${workedDays}`, 20, 83);
+            pdf.text(`Média diária: ${minsToHours(average)}`, 20, 90);
+
+            pdf.setFontSize(14);
+            pdf.text("Lançamentos", 20, 106);
+
+            let y = 118;
+
+            if (entries.length === 0) {
+
+                pdf.setFontSize(10);
+                pdf.text("Nada inserido ainda.", 20, y);
+
+            } else {
+
+                entries.forEach(function (item, index) {
+
+                    if (y > 270) {
+                        pdf.addPage();
+                        y = 20;
+                    }
+
+                    pdf.setFontSize(10);
+                    pdf.text(`${index + 1}. ${fmtDate(item.data)}`, 20, y);
+                    pdf.text(`Atividade: ${item.atividade || "-"}`, 25, y + 7);
+                    pdf.text(`Categoria: ${item.categoria || "-"}`, 25, y + 14);
+                    pdf.text(`Horas: ${minsToHours(item.minutos)}`, 25, y + 21);
+
+                    const obs = pdf.splitTextToSize(
+                        `Observação: ${item.obs || "-"}`,
+                        160
+                    );
+
+                    pdf.text(obs, 25, y + 28);
+
+                    y += 38 + ((obs.length - 1) * 5);
+
+                });
+
+            }
+
+            const pageCount = pdf.internal.getNumberOfPages();
+
+            for (let page = 1; page <= pageCount; page++) {
+
+                pdf.setPage(page);
+                pdf.setFontSize(8);
+                pdf.text(`Página ${page} de ${pageCount}`, 20, 290);
+
+            }
+
+            pdf.save(`controle-horas-estagio-${month}.pdf`);
+
+        }
+
+
+        /* =====================================================
+           IMPORTAR
+        ====================================================== */
+
+        function importData(event) {
+
+            const file =
+                event.target.files[0];
+
+
+            if (!file) {
+                return;
+            }
+
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload = function (e) {
+
+                try {
+
+                    const imported =
+                        JSON.parse(
+                            e.target.result
+                        );
+
+                    db = {
+                        lancamentos: Array.isArray(imported.lancamentos)
+                            ? imported.lancamentos
+                            : []
+                    };
+
+                    saveDB();
+
+                    renderAll();
+
+
+                    alert(
+                        "Dados importados com sucesso!"
+                    );
+
+                } catch (error) {
+
+                    alert(
+                        "Não foi possível importar o arquivo."
+                    );
+
+                }
+
+            };
+
+
+            reader.readAsText(file);
+
+        }
+
+
+
+        /* =====================================================
+           RENDERIZAÇÃO GERAL
+        ====================================================== */
+
+        function renderAll() {
+
+            renderDashboard();
+
+            renderLanc();
+
+
+            renderResumo();
+
+        }
+
+
+
+        /* =====================================================
+           INICIALIZAÇÃO
+        ====================================================== */
+
+        renderLancFilters();
+
+        document.getElementById(
+            "monthDash"
+        ).value = currentMonth;
+
+
+        document.getElementById(
+            "monthResumo"
+        ).value = currentMonth;
+
+
+        renderAll();
+
+    </script>
+
+</body>
+
+</html>
