@@ -1,0 +1,3160 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Controle de Horas • Trabalho</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --accent: #7c3aed;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --success-bg: #dcfce7;
+            --warning: #d97706;
+            --warning-bg: #fef3c7;
+            --danger: #dc2626;
+            --danger-bg: #fee2e2;
+            --holiday: #f59e0b;
+            --holiday-bg: #fef9c3;
+            --dayoff: #8b5cf6;
+            --dayoff-bg: #ede9fe;
+            --vacation: #06b6d4;
+            --vacation-bg: #cffafe;
+            --overtime: #dc2626;
+            --overtime-bg: #fee2e2;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        [data-dark="true"] {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --primary-light: #1e3a8a;
+            --success-bg: #064e3b;
+            --warning-bg: #78350f;
+            --danger-bg: #7f1d1d;
+            --holiday-bg: #78350f;
+            --dayoff-bg: #4c1d95;
+            --vacation-bg: #155e75;
+            --overtime-bg: #7f1d1d;
+        }
+
+        [data-theme="verde"] { --primary: #059669; --primary-dark: #047857; --primary-light: #d1fae5; --accent: #0891b2; }
+        [data-theme="roxo"] { --primary: #7c3aed; --primary-dark: #6d28d9; --primary-light: #ede9fe; --accent: #db2777; }
+        [data-theme="laranja"] { --primary: #ea580c; --primary-dark: #c2410c; --primary-light: #ffedd5; --accent: #d97706; }
+        [data-theme="rosa"] { --primary: #db2777; --primary-dark: #be185d; --primary-light: #fce7f3; --accent: #9333ea; }
+        [data-theme="ciano"] { --primary: #0891b2; --primary-dark: #0e7490; --primary-light: #cffafe; --accent: #2563eb; }
+        [data-theme="vermelho"] { --primary: #dc2626; --primary-dark: #b91c1c; --primary-light: #fee2e2; --accent: #ea580c; }
+
+        [data-theme="verde"][data-dark="true"] { --primary-light: #064e3b; }
+        [data-theme="roxo"][data-dark="true"] { --primary-light: #4c1d95; }
+        [data-theme="laranja"][data-dark="true"] { --primary-light: #7c2d12; }
+        [data-theme="rosa"][data-dark="true"] { --primary-light: #831843; }
+        [data-theme="ciano"][data-dark="true"] { --primary-light: #155e75; }
+        [data-theme="vermelho"][data-dark="true"] { --primary-light: #7f1d1d; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .brand {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .top-actions button,
+        .btn-file {
+            padding: 9px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .top-actions button:hover,
+        .btn-file:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary-dark);
+        }
+
+        [data-dark="true"] .top-actions button:hover,
+        [data-dark="true"] .btn-file:hover { color: #fff; }
+
+        .icon-btn {
+            padding: 9px 12px !important;
+            font-size: 16px !important;
+        }
+
+        .help-btn {
+            background: var(--primary) !important;
+            color: #fff !important;
+            border-color: var(--primary) !important;
+            font-weight: 700 !important;
+            font-size: 15px !important;
+            width: 38px;
+            height: 38px;
+            padding: 0 !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50% !important;
+        }
+
+        .help-btn:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            color: #fff !important;
+            transform: scale(1.08);
+        }
+
+        .theme-picker {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .theme-picker span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .theme-swatches { display: flex; gap: 6px; }
+
+        .theme-swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .theme-swatch:hover { transform: scale(1.15); }
+        .theme-swatch.active { border-color: var(--text); transform: scale(1.15); }
+
+        .navbar {
+            display: flex;
+            gap: 4px;
+            padding: 12px 32px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .nav-btn:hover { background: var(--primary-light); color: var(--primary-dark); }
+        [data-dark="true"] .nav-btn:hover { color: #fff; }
+        .nav-btn.active { background: var(--primary); color: #fff; }
+
+        main {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 28px 32px 60px;
+        }
+
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-header h1 { font-size: 26px; font-weight: 700; }
+        .page-header p { color: var(--text-secondary); font-size: 14px; margin-top: 2px; }
+
+        .page-header label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        input[type="month"], input[type="date"], input[type="time"],
+        input[type="text"], input[type="number"], select, textarea {
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--card-bg);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .notice {
+            background: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .notice strong { color: var(--primary-dark); font-size: 14px; }
+        [data-dark="true"] .notice strong { color: #fff; }
+        .notice p { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 18px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .metric-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+        .metric-card span {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .metric-card strong { font-size: 22px; font-weight: 700; color: var(--primary); }
+        .metric-card.overtime strong { color: var(--overtime); }
+        .metric-card.vacation strong { color: var(--vacation); }
+        .metric-card.holiday strong { color: var(--holiday); }
+        .metric-card.dayoff strong { color: var(--dayoff); }
+        .metric-card.positive strong { color: var(--success); }
+        .metric-card.negative strong { color: var(--danger); }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-header h2 { font-size: 16px; font-weight: 700; }
+        .card-header p { font-size: 13px; color: var(--text-secondary); }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart {
+            padding: 16px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bar-item {
+            display: grid;
+            grid-template-columns: 32px 1fr 90px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-align: right; }
+
+        .bar {
+            height: 10px;
+            background: var(--bg);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 6px;
+            transition: width 0.4s ease;
+            min-width: 2px;
+        }
+
+        .bar-value { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+
+        .category-item { margin-bottom: 14px; }
+
+        .category-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .category-top span { font-size: 13px; font-weight: 600; }
+        .category-top strong { font-size: 13px; color: var(--primary); }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        thead { background: var(--bg); }
+
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--primary-light); }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-ok { background: var(--success-bg); color: var(--success); }
+        .badge-above { background: var(--overtime-bg); color: var(--overtime); }
+        .badge-pending { background: var(--warning-bg); color: var(--warning); }
+        .badge-weekend { background: var(--bg); color: var(--text-secondary); }
+        .badge-holiday { background: var(--holiday-bg); color: var(--holiday); }
+        .badge-dayoff { background: var(--dayoff-bg); color: var(--dayoff); }
+        .badge-vacation { background: var(--vacation-bg); color: var(--vacation); }
+        .badge-overtime { background: var(--overtime-bg); color: var(--overtime); }
+        .badge-future { background: var(--bg); color: var(--text-secondary); opacity: 0.6; }
+
+        .primary-btn {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .primary-btn:hover { background: var(--primary-dark); }
+        .primary-btn:active { transform: scale(0.98); }
+
+        .secondary-btn {
+            padding: 10px 20px;
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .secondary-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary-dark);
+        }
+
+        [data-dark="true"] .secondary-btn:hover { color: #fff; }
+
+        .table-btn {
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 4px;
+        }
+
+        .table-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary-dark);
+        }
+
+        [data-dark="true"] .table-btn:hover { color: #fff; }
+
+        .table-btn.danger:hover {
+            background: var(--danger-bg);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .filters-card .card-header { border-bottom: none; padding-bottom: 0; }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            padding: 16px 24px 24px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .filter-summary {
+            display: flex;
+            gap: 24px;
+            padding: 12px 24px 18px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+
+        .filter-summary strong { color: var(--primary); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 620px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            animation: modalIn 0.25s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 { font-size: 18px; font-weight: 700; }
+
+        .modal-header button {
+            background: none;
+            border: none;
+            font-size: 26px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 4px;
+            transition: color 0.2s;
+        }
+
+        .modal-header button:hover { color: var(--danger); }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 24px;
+        }
+
+        .form-grid .full { grid-column: 1 / -1; }
+
+        .form-grid label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--card-bg);
+            border-left: 4px solid var(--primary);
+            border-radius: var(--radius-sm);
+            padding: 14px 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 300;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            max-width: 320px;
+        }
+
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.warning { border-left-color: var(--warning); }
+
+        /* ===== PAINEL DE AJUDA ===== */
+        .help-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 400;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .help-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .help-panel {
+            position: fixed;
+            top: 0;
+            right: -480px;
+            width: 480px;
+            max-width: 100%;
+            height: 100vh;
+            background: var(--card-bg);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+            z-index: 500;
+            transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+        }
+
+        .help-panel.show {
+            right: 0;
+        }
+
+        .help-header {
+            padding: 20px 24px;
+            background: var(--primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .help-header h2 {
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .help-header h2 .icon {
+            background: rgba(255, 255, 255, 0.2);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .help-close {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #fff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .help-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ABAS DE AJUDA */
+        .help-tabs {
+            display: flex;
+            gap: 2px;
+            padding: 12px 16px 0;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+
+        .help-tab {
+            padding: 10px 14px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .help-tab:hover {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        [data-dark="true"] .help-tab:hover { color: #fff; }
+
+        .help-tab.active {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        [data-dark="true"] .help-tab.active { color: #fff; }
+
+        .help-tab.active::after {
+            content: "";
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px 3px 0 0;
+        }
+
+        /* CONTEÚDO DE AJUDA */
+        .help-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .help-content {
+            display: none;
+        }
+
+        .help-content.active {
+            display: block;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .help-content h3 {
+            font-size: 16px;
+            color: var(--primary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-content h4 {
+            font-size: 14px;
+            color: var(--text);
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .help-content p {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.65;
+        }
+
+        .help-content ul, .help-content ol {
+            margin-left: 20px;
+            margin-bottom: 14px;
+        }
+
+        .help-content li {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            line-height: 1.6;
+        }
+
+        .help-content strong {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .help-content code {
+            background: var(--bg);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12.5px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* CAIXAS DE DESTAQUE NO HELP */
+        .help-box {
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin: 14px 0;
+            font-size: 13px;
+            border-left: 4px solid;
+        }
+
+        .help-box p {
+            margin-bottom: 0;
+            font-size: 13px;
+        }
+
+        .help-box.info {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .help-box.info strong { color: var(--primary-dark); }
+        [data-dark="true"] .help-box.info strong { color: #fff; }
+
+        .help-box.warning {
+            background: var(--warning-bg);
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .help-box.success {
+            background: var(--success-bg);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .help-box.danger {
+            background: var(--danger-bg);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* BADGES DE EXEMPLO */
+        .help-badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-right: 4px;
+        }
+
+        .help-badge.ok { background: var(--success-bg); color: var(--success); }
+        .help-badge.pending { background: var(--warning-bg); color: var(--warning); }
+        .help-badge.holiday { background: var(--holiday-bg); color: var(--holiday); }
+        .help-badge.dayoff { background: var(--dayoff-bg); color: var(--dayoff); }
+        .help-badge.vacation { background: var(--vacation-bg); color: var(--vacation); }
+        .help-badge.overtime { background: var(--overtime-bg); color: var(--overtime); }
+        .help-badge.weekend { background: var(--bg); color: var(--text-secondary); }
+        .help-badge.future { background: var(--bg); color: var(--text-secondary); opacity: 0.6; }
+
+        /* ETAPAS */
+        .help-steps {
+            counter-reset: hstep;
+            margin: 14px 0;
+        }
+
+        .help-step {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+            align-items: flex-start;
+        }
+
+        .help-step::before {
+            counter-increment: hstep;
+            content: counter(hstep);
+            background: var(--primary);
+            color: #fff;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .help-step-content {
+            flex: 1;
+        }
+
+        .help-step-content strong {
+            display: block;
+            color: var(--primary);
+            margin-bottom: 2px;
+            font-size: 13.5px;
+        }
+
+        .help-step-content p {
+            margin-bottom: 0;
+            font-size: 13px;
+        }
+
+        /* FAQ */
+        .help-faq {
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0;
+        }
+
+        .help-faq:last-child { border-bottom: none; }
+
+        .help-faq-q {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 13.5px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.2s;
+        }
+
+        .help-faq-q:hover { opacity: 0.8; }
+
+        .help-faq-q::before {
+            content: "?";
+            background: var(--primary);
+            color: #fff;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .help-faq-a {
+            color: var(--text-secondary);
+            font-size: 13px;
+            padding-left: 28px;
+            line-height: 1.65;
+        }
+
+        /* BOTÃO FLUTUANTE ALTERNATIVO */
+        .help-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            font-size: 24px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            z-index: 150;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+        }
+
+        .help-fab:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+        }
+
+        /* SCROLLBAR CUSTOMIZADO */
+        .help-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .help-body::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        .help-body::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .help-body::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        @media (max-width: 900px) {
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 700px) {
+            .topbar { padding: 12px 16px; }
+            .navbar { padding: 10px 16px; }
+            main { padding: 20px 16px 40px; }
+            .page-header { flex-direction: column; align-items: flex-start; }
+            .page-header input[type="month"] { width: 100%; }
+            .form-grid { grid-template-columns: 1fr; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .filters-grid { grid-template-columns: 1fr; }
+            .bar-item { grid-template-columns: 28px 1fr 70px; }
+            .theme-picker { width: 100%; justify-content: center; }
+            .help-panel { width: 100%; right: -100%; }
+        }
+    </style>
+</head>
+
+<body data-theme="azul" data-dark="false">
+
+    <header class="topbar">
+        <div class="brand">
+            CONTROLE DE HORAS • TRABALHO
+        </div>
+
+        <div class="top-actions">
+            <div class="theme-picker">
+                <span>Tema:</span>
+                <div class="theme-swatches" id="themeSwatches">
+                    <div class="theme-swatch active" data-theme="azul" style="background:#2563eb" title="Azul"></div>
+                    <div class="theme-swatch" data-theme="verde" style="background:#059669" title="Verde"></div>
+                    <div class="theme-swatch" data-theme="roxo" style="background:#7c3aed" title="Roxo"></div>
+                    <div class="theme-swatch" data-theme="laranja" style="background:#ea580c" title="Laranja"></div>
+                    <div class="theme-swatch" data-theme="rosa" style="background:#db2777" title="Rosa"></div>
+                    <div class="theme-swatch" data-theme="ciano" style="background:#0891b2" title="Ciano"></div>
+                    <div class="theme-swatch" data-theme="vermelho" style="background:#dc2626" title="Vermelho"></div>
+                </div>
+            </div>
+
+            <button class="icon-btn" onclick="toggleDark()" title="Modo escuro" id="darkBtn">🌙</button>
+            <button onclick="exportCSV()" title="Exportar CSV">CSV</button>
+            <button onclick="exportData()" title="Exportar PDF">PDF</button>
+
+            <label class="btn-file">
+                Importar
+                <input type="file" id="importFile" accept=".json" onchange="importData(event)" hidden>
+            </label>
+
+            <button class="help-btn" onclick="openHelp()" title="Ajuda">?</button>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <button class="nav-btn active" onclick="showPage('dashboard', this)">Dashboard</button>
+        <button class="nav-btn" onclick="showPage('lancamentos', this)">Lançamentos</button>
+        <button class="nav-btn" onclick="showPage('resumo', this)">Resumo mensal</button>
+        <button class="nav-btn" onclick="showPage('config', this)">Configurações</button>
+    </nav>
+
+    <main>
+        <!-- ===== DASHBOARD ===== -->
+        <section id="dashboard" class="page active">
+            <div class="page-header">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p>Acompanhe suas horas de trabalho.</p>
+                </div>
+                <div>
+                    <label for="monthDash">Mês</label>
+                    <input type="month" id="monthDash" value="2026-10" onchange="setMonth(this.value)">
+                </div>
+            </div>
+
+            <div class="notice">
+                <strong>Precisa de ajuda?</strong>
+                <p>
+                    Clique no botão <strong>?</strong> no topo da página ou no botão flutuante no canto
+                    inferior direito para abrir o guia rápido desta seção.
+                </p>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span>Total realizado</span>
+                    <strong id="mTotal">0h</strong>
+                </div>
+                <div class="metric-card">
+                    <span>Meta do mês</span>
+                    <strong id="mMeta">0h</strong>
+                </div>
+                <div class="metric-card" id="cardSaldo">
+                    <span>Saldo do mês</span>
+                    <strong id="mSaldo">0h</strong>
+                </div>
+                <div class="metric-card" id="cardBanco">
+                    <span>Banco de horas</span>
+                    <strong id="mBanco">0h</strong>
+                </div>
+                <div class="metric-card">
+                    <span>Progresso</span>
+                    <strong id="mPct">0%</strong>
+                </div>
+                <div class="metric-card">
+                    <span>Média diária</span>
+                    <strong id="mMedia">0h</strong>
+                </div>
+                <div class="metric-card">
+                    <span>Dias trabalhados</span>
+                    <strong id="mDias">0</strong>
+                </div>
+                <div class="metric-card overtime">
+                    <span>Horas extras 50%</span>
+                    <strong id="mExtra50">0h</strong>
+                </div>
+                <div class="metric-card overtime">
+                    <span>Horas extras 100%</span>
+                    <strong id="mExtra100">0h</strong>
+                </div>
+                <div class="metric-card holiday">
+                    <span>Feriados</span>
+                    <strong id="mFeriados">0</strong>
+                </div>
+                <div class="metric-card dayoff">
+                    <span>Folgas</span>
+                    <strong id="mFolgas">0</strong>
+                </div>
+                <div class="metric-card vacation">
+                    <span>Férias</span>
+                    <strong id="mFerias">0 dias</strong>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Horas por dia</h2>
+                    </div>
+                    <div id="dayChart" class="chart"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Horas por categoria</h2>
+                    </div>
+                    <div id="categoryChart" class="chart"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Resumo diário</h2>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Horas</th>
+                                <th>Extras</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboardTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== LANÇAMENTOS ===== -->
+        <section id="lancamentos" class="page">
+            <div class="page-header">
+                <div>
+                    <h1>Lançamentos</h1>
+                    <p>Registre e consulte suas atividades.</p>
+                </div>
+                <button class="primary-btn" onclick="openLancModal()">
+                    + Novo lançamento
+                </button>
+            </div>
+
+            <div class="card filters-card">
+                <div class="card-header">
+                    <div>
+                        <h2>Filtros</h2>
+                        <p>Encontre rapidamente os lançamentos.</p>
+                    </div>
+                    <button class="secondary-btn" onclick="clearLancFilters()">Limpar filtros</button>
+                </div>
+
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label>Período</label>
+                        <select id="filterPeriodType" onchange="onPeriodTypeChange()">
+                            <option value="">Todos</option>
+                            <option value="day">Dia específico</option>
+                            <option value="month">Mês</option>
+                            <option value="custom">Período customizado</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group" id="periodDayGroup" style="display:none;">
+                        <label>Dia</label>
+                        <input type="date" id="filterDate" onchange="renderLanc()">
+                    </div>
+
+                    <div class="filter-group" id="periodMonthGroup" style="display:none;">
+                        <label>Mês</label>
+                        <input type="month" id="filterMonth" onchange="renderLanc()">
+                    </div>
+
+                    <div class="filter-group" id="periodCustomGroup" style="display:none;">
+                        <label>De</label>
+                        <input type="date" id="filterStart" onchange="renderLanc()">
+                    </div>
+
+                    <div class="filter-group" id="periodCustomGroup2" style="display:none;">
+                        <label>Até</label>
+                        <input type="date" id="filterEnd" onchange="renderLanc()">
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Categoria</label>
+                        <select id="filterCategory" onchange="renderLanc()">
+                            <option value="">Todas as Categorias</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Tipo de dia</label>
+                        <select id="filterType" onchange="renderLanc()">
+                            <option value="">Todos</option>
+                            <option value="trabalho">Trabalho</option>
+                            <option value="feriado">Feriado</option>
+                            <option value="folga">Folga</option>
+                            <option value="ferias">Férias</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Buscar</label>
+                        <input type="text" id="filterSearch" placeholder="Atividade..." oninput="renderLanc()">
+                    </div>
+                </div>
+
+                <div class="filter-summary">
+                    <span>Lançamentos: <strong id="filterCount">0</strong></span>
+                    <span>Total: <strong id="filterTotal">0h</strong></span>
+                    <span>Extras: <strong id="filterExtras">0h</strong></span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Atividade</th>
+                                <th>Categoria</th>
+                                <th>Tipo</th>
+                                <th>Horas</th>
+                                <th>Extras</th>
+                                <th>Observação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lancTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== RESUMO MENSAL ===== -->
+        <section id="resumo" class="page">
+            <div class="page-header">
+                <div>
+                    <h1>Resumo mensal</h1>
+                    <p>Consulte o resultado de cada mês.</p>
+                </div>
+                <input type="month" id="monthResumo" value="2026-10" onchange="renderResumo()">
+            </div>
+
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mês</th>
+                                <th>Total</th>
+                                <th>Meta</th>
+                                <th>Saldo</th>
+                                <th>Banco acum.</th>
+                                <th>Extras 50%</th>
+                                <th>Extras 100%</th>
+                                <th>Progresso</th>
+                                <th>Fer.</th>
+                                <th>Folg.</th>
+                                <th>Fér.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resumoTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== CONFIGURAÇÕES ===== -->
+        <section id="config" class="page">
+            <div class="page-header">
+                <div>
+                    <h1>Configurações</h1>
+                    <p>Personalize o sistema de acordo com sua preferência.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Jornada e banco de horas</h2>
+                </div>
+                <div class="form-grid" style="padding: 24px;">
+                    <div>
+                        <label for="dailyHours">Horas por dia útil</label>
+                        <input type="time" id="dailyHours" value="08:00" onchange="saveSettings()">
+                    </div>
+                    <div>
+                        <label for="initialBalance">Saldo inicial (minutos)</label>
+                        <input type="number" id="initialBalance" value="0" step="1" onchange="saveSettings()">
+                        <p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">
+                            Positivo = horas a favor. Negativo = horas a compensar.
+                        </p>
+                    </div>
+                    <div>
+                        <label for="startMonth">Mês inicial do banco</label>
+                        <input type="month" id="startMonth" value="2026-10" onchange="saveSettings()">
+                        <p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">
+                            Meses anteriores a este são ignorados no banco de horas.
+                        </p>
+                    </div>
+                    <div class="full">
+                        <p style="font-size:12px;color:var(--text-secondary);">
+                            <strong>Como funciona o banco:</strong> o saldo de cada mês (a partir do mês inicial)
+                            é somado ao saldo inicial e transportado para os meses seguintes.
+                            A meta é sempre calculada com base em todos os dias úteis do mês.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Feriados</h2>
+                    <button class="primary-btn" onclick="importNationalHolidays()">🇧🇷 Importar feriados nacionais</button>
+                </div>
+                <div class="form-grid" style="padding: 24px;">
+                    <div>
+                        <label for="holidayDate">Data</label>
+                        <input type="date" id="holidayDate">
+                    </div>
+                    <div>
+                        <label for="holidayName">Nome do feriado</label>
+                        <input type="text" id="holidayName" placeholder="Ex.: Natal">
+                    </div>
+                    <div class="full">
+                        <button class="primary-btn" onclick="addHoliday()">Adicionar feriado</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Nome</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holidayTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Folgas</h2>
+                </div>
+                <div class="form-grid" style="padding: 24px;">
+                    <div>
+                        <label for="dayoffDate">Data</label>
+                        <input type="date" id="dayoffDate">
+                    </div>
+                    <div>
+                        <label for="dayoffName">Motivo</label>
+                        <input type="text" id="dayoffName" placeholder="Ex.: Folga compensatória">
+                    </div>
+                    <div class="full">
+                        <button class="primary-btn" onclick="addDayoff()">Adicionar folga</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Motivo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dayoffTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Férias</h2>
+                </div>
+                <div class="form-grid" style="padding: 24px;">
+                    <div>
+                        <label for="vacationStart">Início</label>
+                        <input type="date" id="vacationStart">
+                    </div>
+                    <div>
+                        <label for="vacationEnd">Fim</label>
+                        <input type="date" id="vacationEnd">
+                    </div>
+                    <div class="full">
+                        <button class="primary-btn" onclick="addVacation()">Adicionar período de férias</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Início</th>
+                                <th>Fim</th>
+                                <th>Dias</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vacationTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Aparência</h2>
+                </div>
+                <div style="padding: 24px;">
+                    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+                        Cor principal:
+                    </p>
+                    <div class="theme-swatches" id="themeSwatchesConfig" style="margin-bottom:20px;">
+                        <div class="theme-swatch" data-theme="azul" style="background:#2563eb" title="Azul"></div>
+                        <div class="theme-swatch" data-theme="verde" style="background:#059669" title="Verde"></div>
+                        <div class="theme-swatch" data-theme="roxo" style="background:#7c3aed" title="Roxo"></div>
+                        <div class="theme-swatch" data-theme="laranja" style="background:#ea580c" title="Laranja"></div>
+                        <div class="theme-swatch" data-theme="rosa" style="background:#db2777" title="Rosa"></div>
+                        <div class="theme-swatch" data-theme="ciano" style="background:#0891b2" title="Ciano"></div>
+                        <div class="theme-swatch" data-theme="vermelho" style="background:#dc2626" title="Vermelho"></div>
+                    </div>
+
+                    <button class="secondary-btn" onclick="toggleDark()">
+                        🌙 Alternar modo escuro
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Dados</h2>
+                </div>
+                <div style="padding: 24px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="secondary-btn" onclick="exportData()">Exportar PDF</button>
+                    <button class="secondary-btn" onclick="exportCSV()">Exportar CSV</button>
+                    <button class="secondary-btn" onclick="exportJSON()">Exportar JSON (backup)</button>
+                    <button class="secondary-btn" onclick="clearAll()">🗑 Apagar tudo</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===== MODAL DE LANÇAMENTO ===== -->
+    <div id="modalLanc" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalLancTitle">Novo lançamento</h2>
+                <button onclick="closeModals()">×</button>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label for="lData">Data</label>
+                    <input type="date" id="lData">
+                </div>
+
+                <div>
+                    <label for="lTipoDia">Tipo de dia</label>
+                    <select id="lTipoDia" onchange="toggleLancFields()">
+                        <option value="trabalho">Trabalho</option>
+                        <option value="feriado">Feriado</option>
+                        <option value="folga">Folga</option>
+                        <option value="ferias">Férias</option>
+                    </select>
+                </div>
+
+                <div id="hoursField">
+                    <label for="lHoras">Horas trabalhadas</label>
+                    <input type="time" id="lHoras" value="08:00">
+                </div>
+
+                <div class="full">
+                    <label for="lAtividade">Atividade</label>
+                    <input type="text" id="lAtividade" placeholder="Ex.: Reunião de alinhamento">
+                </div>
+
+                <div>
+                    <label for="lCategoria">Categoria</label>
+                    <select id="lCategoria"></select>
+                </div>
+
+                <div class="full">
+                    <label for="lObs">Observação</label>
+                    <textarea id="lObs" rows="3" placeholder="Observações..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="secondary-btn" onclick="closeModals()">Cancelar</button>
+                <button class="primary-btn" onclick="saveLanc()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PAINEL DE AJUDA ===== -->
+    <div class="help-overlay" id="helpOverlay" onclick="closeHelp()"></div>
+
+    <aside class="help-panel" id="helpPanel">
+        <div class="help-header">
+            <h2><span class="icon">?</span> Guia rápido</h2>
+            <button class="help-close" onclick="closeHelp()">×</button>
+        </div>
+
+        <div class="help-tabs">
+            <button class="help-tab active" onclick="showHelpTab('inicio', this)">Início</button>
+            <button class="help-tab" onclick="showHelpTab('lancamentos', this)">Lançar</button>
+            <button class="help-tab" onclick="showHelpTab('dashboard', this)">Dashboard</button>
+            <button class="help-tab" onclick="showHelpTab('config', this)">Config</button>
+            <button class="help-tab" onclick="showHelpTab('faq', this)">FAQ</button>
+        </div>
+
+        <div class="help-body">
+
+            <!-- INÍCIO -->
+            <div class="help-content active" id="help-inicio">
+                <h3>👋 Bem-vindo!</h3>
+                <p>
+                    Este é seu <strong>controle de horas de trabalho</strong>. Aqui você registra suas
+                    atividades do dia a dia e o sistema calcula tudo automaticamente:
+                    meta mensal, saldo, horas extras e banco de horas.
+                </p>
+
+                <h4>Como começar em 3 passos</h4>
+                <div class="help-steps">
+                    <div class="help-step">
+                        <div class="help-step-content">
+                            <strong>Configure a jornada</strong>
+                            <p>Vá em <em>Configurações</em> e confirme que suas horas diárias estão corretas (padrão: 8h).</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-content">
+                            <strong>Cadastre feriados</strong>
+                            <p>Use o botão "Importar feriados nacionais" para não perder tempo cadastrando um a um.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-content">
+                            <strong>Lance suas atividades</strong>
+                            <p>Na aba <em>Lançamentos</em>, clique em "+ Novo lançamento" sempre que fizer algo.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-box info">
+                    <p><strong>💾 Seus dados são locais.</strong> Tudo fica salvo no seu navegador. Nada é enviado para internet. Faça backup periodicamente usando <em>Exportar JSON</em> em Configurações.</p>
+                </div>
+
+                <h4>Você não precisa marcar ponto!</h4>
+                <p>
+                    Diferente de sistemas tradicionais, aqui você só informa <strong>quanto tempo
+                    trabalhou em cada atividade</strong>. Sem entrada, saída ou cronômetro.
+                </p>
+            </div>
+
+            <!-- LANÇAMENTOS -->
+            <div class="help-content" id="help-lancamentos">
+                <h3>📝 Como registrar suas horas</h3>
+                <p>
+                    Todo o resto do sistema funciona em cima do que você lança aqui.
+                    Quanto mais fiel for seu registro, mais precisos serão os cálculos.
+                </p>
+
+                <h4>Criar um lançamento</h4>
+                <div class="help-steps">
+                    <div class="help-step">
+                        <div class="help-step-content">
+                            <strong>Clique em "+ Novo lançamento"</strong>
+                            <p>Fica no canto superior direito da aba Lançamentos.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-content">
+                            <strong>Preencha a Data</strong>
+                            <p>Escolha o dia em que a atividade aconteceu. O padrão já é hoje.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-content">
+                            <strong>Escolha o Tipo de dia</strong>
+                            <p>
+                                <strong>Trabalho</strong> para atividades normais.<br>
+                                <strong>Feriado</strong> para feriados trabalhados ou não.<br>
+                                <strong>Folga</strong> para folgas.<br>
+                                <strong>Férias</strong> para dias de férias.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-content">
+                            <strong>Informe as Horas</strong>
+                            <p>Formato <code>HH:MM</code>. Ex: <code>08:00</code> para 8 horas.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-content">
+                            <strong>Descreva a atividade e categoria</strong>
+                            <p>Ex: "Reunião com cliente" na categoria "Reunião".</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-content">
+                            <strong>Salve</strong>
+                            <p>Aparece na tabela e o Dashboard atualiza na hora.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h4>Vários lançamentos no mesmo dia</h4>
+                <p>
+                    Pode lançar quantas atividades quiser para a mesma data.
+                    O sistema soma automaticamente e calcula se você bateu a meta.
+                </p>
+
+                <div class="help-box success">
+                    <p><strong>✓ Dica:</strong> Lance no mesmo dia, enquanto lembra. Fica mais fácil do que tentar reconstruir no fim do mês.</p>
+                </div>
+
+                <h4>Filtros</h4>
+                <p>Use os filtros para achar lançamentos específicos:</p>
+                <ul>
+                    <li><strong>Período:</strong> dia, mês ou intervalo customizado</li>
+                    <li><strong>Categoria:</strong> filtra por tipo de atividade</li>
+                    <li><strong>Tipo de dia:</strong> trabalho, feriado, folga, férias</li>
+                    <li><strong>Buscar:</strong> pesquisa texto</li>
+                </ul>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div class="help-content" id="help-dashboard">
+                <h3>📊 Entendendo o Dashboard</h3>
+                <p>
+                    Visão geral do mês selecionado. As métricas se atualizam
+                    automaticamente conforme você lança horas.
+                </p>
+
+                <h4>Cartões principais</h4>
+                <ul>
+                    <li><strong>Total realizado:</strong> soma de todas as horas do mês</li>
+                    <li><strong>Meta do mês:</strong> dias úteis × jornada (descontando feriados/folgas/férias)</li>
+                    <li><strong>Saldo do mês:</strong> total − meta. Positivo = crédito</li>
+                    <li><strong>Banco de horas:</strong> saldo acumulado desde o mês inicial</li>
+                    <li><strong>Progresso:</strong> % da meta atingido</li>
+                    <li><strong>Horas extras 50%:</strong> passou da meta em dia útil</li>
+                    <li><strong>Horas extras 100%:</strong> trabalhou em domingo ou feriado</li>
+                </ul>
+
+                <h4>Badges de status</h4>
+                <p>Na tabela de resumo diário, cada linha tem um badge:</p>
+                <ul>
+                    <li><span class="help-badge ok">OK</span> Bateu a meta do dia</li>
+                    <li><span class="help-badge overtime">OK + extra</span> Passou da meta, gerou extra</li>
+                    <li><span class="help-badge pending">Pendente</span> Não atingiu a meta</li>
+                    <li><span class="help-badge holiday">Feriado</span> Dia marcado como feriado</li>
+                    <li><span class="help-badge dayoff">Folga</span> Dia marcado como folga</li>
+                    <li><span class="help-badge vacation">Férias</span> Dia dentro de período de férias</li>
+                    <li><span class="help-badge weekend">Fim de semana</span> Sábado ou domingo sem trabalho</li>
+                    <li><span class="help-badge future">Aguardando</span> Dia futuro, ainda não chegou</li>
+                </ul>
+
+                <h4>Gráficos</h4>
+                <p>
+                    <strong>Horas por dia:</strong> barras coloridas mostrando o total de cada dia.
+                    <br>
+                    <strong>Horas por categoria:</strong> distribuição do tempo por tipo de atividade.
+                </p>
+            </div>
+
+            <!-- CONFIGURAÇÕES -->
+            <div class="help-content" id="help-config">
+                <h3>⚙️ Configurações</h3>
+                <p>
+                    Ajustes básicos do sistema. Recomendamos revisar tudo antes de começar.
+                </p>
+
+                <h4>Jornada diária</h4>
+                <p>
+                    Quantas horas você trabalha por dia. O padrão é <strong>08:00</strong>.
+                    Isso define como o sistema calcula a meta mensal.
+                </p>
+
+                <h4>Saldo inicial</h4>
+                <p>
+                    Use se você já tinha horas a favor ou a compensar antes de começar.
+                    Informe em <strong>minutos</strong>:
+                </p>
+                <ul>
+                    <li><code>120</code> → +2h de crédito</li>
+                    <li><code>-180</code> → -3h de débito</li>
+                    <li><code>0</code> → começando do zero</li>
+                </ul>
+
+                <h4>Mês inicial do banco</h4>
+                <p>
+                    O banco de horas só começa a contar <strong>a partir deste mês</strong>.
+                    Meses anteriores são ignorados. Útil para quem está começando
+                    a usar o sistema no meio do ano.
+                </p>
+
+                <h4>Feriados</h4>
+                <p>
+                    Cadastre manualmente ou use <strong>Importar feriados nacionais</strong>
+                    para adicionar automaticamente todos os feriados brasileiros de um ano
+                    (incluindo Carnaval, Corpus Christi e Sexta-feira Santa).
+                </p>
+
+                <h4>Folgas</h4>
+                <p>
+                    Dias específicos em que você não trabalhou por algum motivo
+                    (folga compensatória, banco de horas, etc). Reduzem a meta.
+                </p>
+
+                <h4>Férias</h4>
+                <p>
+                    Cadastre um período de férias com data de início e fim.
+                    Todos os dias dentro desse intervalo ficam marcados como "Férias"
+                    e não contam na meta.
+                </p>
+
+                <div class="help-box warning">
+                    <p><strong>⚠ Atenção:</strong> feriados, folgas e férias <strong>reduzem a meta mensal</strong>. Se você tem 22 dias úteis mas 2 feriados, a meta cai para 20 × 8h = 160h.</p>
+                </div>
+
+                <h4>Backup</h4>
+                <p>
+                    Em Configurações → Dados, você pode:
+                </p>
+                <ul>
+                    <li><strong>Exportar PDF:</strong> relatório formatado para imprimir</li>
+                    <li><strong>Exportar CSV:</strong> abre no Excel/Google Sheets</li>
+                    <li><strong>Exportar JSON:</strong> backup completo para restaurar depois</li>
+                    <li><strong>Apagar tudo:</strong> limpa todos os dados (cuidado!)</li>
+                </ul>
+            </div>
+
+            <!-- FAQ -->
+            <div class="help-content" id="help-faq">
+                <h3>❓ Perguntas frequentes</h3>
+
+                <div class="help-faq">
+                    <div class="help-faq-q">Meus dados vão para algum servidor?</div>
+                    <div class="help-faq-a">
+                        Não. Tudo fica salvo no seu próprio navegador (localStorage).
+                        Nada é enviado para internet. Se quiser usar em outro dispositivo,
+                        use o backup em JSON.
+                    </div>
+                </div>
+
+                <div class="help-faq">
+                    <div class="help-faq-q">Por que o saldo está negativo no começo do mês?</div>
+                    <div class="help-faq-a">
+                        O saldo é <em>total − meta</em>. No começo do mês, você ainda não lançou
+                        todas as horas, então o total é menor que a meta. Conforme você registra
+                        as atividades, o saldo vai se equilibrando.
+                    </div>
+                </div>
+
+                <div class="help-faq">
+                    <div class="help-faq-q">O que conta como hora extra?</div>
+                    <div class="help-faq-a">
+                        <strong>Extra 50%:</strong> horas acima da jornada diária em dia útil
+                        (ex: trabalhou 10h num dia normal = 2h extras).<br>
+                        <strong>Extra 100%:</strong> horas trabalhadas em domingos ou feriados.
+                    </div>
+                </div>
+
+                <div class="help-faq">
+                    <div class="help-faq-q">Como o banco de horas é calculado?</div>
+                    <div class="help-faq-a">
+                        O sistema soma o saldo de cada mês a partir do <em>mês inicial</em>
+                        configurado. Meses futuros são ignorados. O saldo inicial configurado
+                        também é somado.
+                    </div>
+                </div>
+
+                <div class="help-faq">
+                    <div class="help-faq-q">Posso ter vários lançamentos no mesmo dia?</div>
+                    <div class="help-faq-a">
+                        Sim! Lance uma atividade por linha. O sistema soma todas as horas
+                        do dia e calcula o status corretamente.
+                    </div>
+                </div>
+
+                <div class="help-faq">
+                    <div class="help-faq-q">Perdi meus dados. Tem como recuperar?</div>
+                    <div class="help-faq-a">
+                        Só se você tiver um backup em JSON. Sem backup, não tem como recuperar
+                        dados apagados do localStorage. Por isso, faça backups periodicamente.
+                    </div>
+                </div>
+
+                <div class="help-faq">
+                    <div class="help-faq-q">Como funciona "Importar feriados nacionais"?</div>
+                    <div class="help-faq-a">
+                        Ele adiciona automaticamente todos os feriados brasileiros de um ano,
+                        incluindo os móveis (Carnaval, Sexta-feira Santa, Corpus Christi), calculados
+                        a partir da Páscoa. Se o feriado já existir, não duplica.
+                    </div>
+                </div>
+
+                <div class="help-faq">
+                    <div class="help-faq-q">Posso mudar a cor do sistema?</div>
+                    <div class="help-faq-a">
+                        Sim! No topo da página tem 7 bolinhas coloridas. Clique na que preferir.
+                        Também tem o botão 🌙 para ativar modo escuro.
+                    </div>
+                </div>
+
+                <div class="help-faq">
+                    <div class="help-faq-q">Como apago um lançamento?</div>
+                    <div class="help-faq-a">
+                        Na tabela de Lançamentos, cada linha tem o botão <strong>Excluir</strong>.
+                        Também tem <strong>Editar</strong> se precisar corrigir algo.
+                    </div>
+                </div>
+
+                <div class="help-box info" style="margin-top: 20px;">
+                    <p><strong>Não achou o que procurava?</strong> Explore as abas acima ou verifique o manual completo em PDF.</p>
+                </div>
+            </div>
+
+        </div>
+    </aside>
+
+    <!-- BOTÃO FLUTUANTE DE AJUDA -->
+    <button class="help-fab" onclick="openHelp()" title="Ajuda (F1)">?</button>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const STORAGE_KEY = "controleHorasTrabalhoV4";
+        const DEFAULT_START_MONTH = "2026-10";
+
+        const CATEGORIES = [
+            "Reunião", "Análise", "Documentação", "Treinamento", "Planejamento",
+            "E-mail/Comunicação", "Pesquisa", "Atendimento", "Desenvolvimento",
+            "Suporte", "Deslocamento", "Outros"
+        ];
+
+        const INITIAL = {
+            lancamentos: [],
+            feriados: [],
+            folgas: [],
+            ferias: [],
+            configuracoes: {
+                horasDiarias: 480,
+                tema: "azul",
+                dark: false,
+                saldoInicial: 0,
+                startMonth: DEFAULT_START_MONTH
+            }
+        };
+
+        let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || INITIAL;
+
+        if (!Array.isArray(db.lancamentos)) db.lancamentos = [];
+        if (!Array.isArray(db.feriados)) db.feriados = [];
+        if (!Array.isArray(db.folgas)) db.folgas = [];
+        if (!Array.isArray(db.ferias)) db.ferias = [];
+        if (!db.configuracoes) db.configuracoes = { horasDiarias: 480, tema: "azul", dark: false, saldoInicial: 0, startMonth: DEFAULT_START_MONTH };
+        if (!db.configuracoes.horasDiarias) db.configuracoes.horasDiarias = 480;
+        if (!db.configuracoes.tema) db.configuracoes.tema = "azul";
+        if (typeof db.configuracoes.dark === "undefined") db.configuracoes.dark = false;
+        if (typeof db.configuracoes.saldoInicial === "undefined") db.configuracoes.saldoInicial = 0;
+        if (!db.configuracoes.startMonth) db.configuracoes.startMonth = DEFAULT_START_MONTH;
+
+        let currentMonth = "2026-10";
+        let editingLancIndex = null;
+        let currentPage = "dashboard";
+
+        function saveDB() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+        }
+
+        function toast(msg, type) {
+            const el = document.getElementById("toast");
+            el.textContent = msg;
+            el.className = "toast " + (type || "");
+            el.classList.add("show");
+            setTimeout(function () { el.classList.remove("show"); }, 3000);
+        }
+
+        function applyTheme(theme) {
+            document.body.setAttribute("data-theme", theme);
+            db.configuracoes.tema = theme;
+            saveDB();
+            document.querySelectorAll(".theme-swatch").forEach(function (el) {
+                el.classList.toggle("active", el.dataset.theme === theme);
+            });
+        }
+
+        function toggleDark() {
+            const isDark = document.body.getAttribute("data-dark") === "true";
+            const newDark = !isDark;
+            document.body.setAttribute("data-dark", newDark ? "true" : "false");
+            document.getElementById("darkBtn").textContent = newDark ? "☀️" : "🌙";
+            db.configuracoes.dark = newDark;
+            saveDB();
+        }
+
+        function minsToHours(minutes) {
+            const h = Math.floor(Math.abs(minutes) / 60);
+            const m = Math.abs(minutes) % 60;
+            return `${h}h ${String(m).padStart(2, "0")}min`;
+        }
+
+        function hmToMinutes(value) {
+            if (!value) return 0;
+            const parts = value.split(":");
+            return Number(parts[0]) * 60 + Number(parts[1] || 0);
+        }
+
+        function minsToTime(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+        }
+
+        function fmtDate(date) {
+            if (!date) return "";
+            const p = date.split("-");
+            return p[2] + "/" + p[1] + "/" + p[0];
+        }
+
+        function todayISO() {
+            const d = new Date();
+            return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        }
+
+        function isWeekday(date) {
+            const d = new Date(date + "T12:00:00").getDay();
+            return d !== 0 && d !== 6;
+        }
+
+        function isSunday(date) {
+            return new Date(date + "T12:00:00").getDay() === 0;
+        }
+
+        function daysInMonth(month) {
+            const p = month.split("-");
+            return new Date(Number(p[0]), Number(p[1]), 0).getDate();
+        }
+
+        function getDailyGoal() {
+            return db.configuracoes.horasDiarias || 480;
+        }
+
+        function getStartMonth() {
+            return db.configuracoes.startMonth || DEFAULT_START_MONTH;
+        }
+
+        function isHoliday(date) {
+            return db.feriados.some(function (f) { return f.data === date; });
+        }
+
+        function getHolidayName(date) {
+            const f = db.feriados.find(function (f) { return f.data === date; });
+            return f ? f.nome : "";
+        }
+
+        function isDayoff(date) {
+            return db.folgas.some(function (f) { return f.data === date; });
+        }
+
+        function getDayoffName(date) {
+            const f = db.folgas.find(function (f) { return f.data === date; });
+            return f ? f.motivo : "";
+        }
+
+        function isVacation(date) {
+            return db.ferias.some(function (f) {
+                return date >= f.inicio && date <= f.fim;
+            });
+        }
+
+        function getDayType(date) {
+            if (isHoliday(date)) return "feriado";
+            if (isVacation(date)) return "ferias";
+            if (isDayoff(date)) return "folga";
+            if (!isWeekday(date)) return "fim de semana";
+            return "trabalho";
+        }
+
+        function monthEntries(month) {
+            return db.lancamentos.filter(function (item) {
+                return item.data.startsWith(month);
+            });
+        }
+
+        function minutesForDate(date) {
+            return db.lancamentos
+                .filter(function (item) { return item.data === date; })
+                .reduce(function (total, item) { return total + item.minutos; }, 0);
+        }
+
+        function calcExtrasForDate(date) {
+            const minutes = minutesForDate(date);
+            const goal = getDailyGoal();
+            let extra50 = 0;
+            let extra100 = 0;
+
+            if (isHoliday(date) || isSunday(date)) {
+                extra100 = minutes;
+            } else if (isWeekday(date)) {
+                if (minutes > goal) extra50 = minutes - goal;
+            } else {
+                extra50 = minutes;
+            }
+
+            return { extra50, extra100 };
+        }
+
+        function calc(month) {
+            const entries = monthEntries(month);
+            const dailyGoal = getDailyGoal();
+            let total = 0;
+
+            entries.forEach(function (item) { total += item.minutos; });
+
+            const days = daysInMonth(month);
+
+            let weekdays = 0;
+            let workedDays = 0;
+            let okDays = 0;
+            let pendingDays = 0;
+            let holidays = 0;
+            let dayoffs = 0;
+            let vacationDays = 0;
+            let extra50 = 0;
+            let extra100 = 0;
+
+            for (let day = 1; day <= days; day++) {
+                const date = month + "-" + String(day).padStart(2, "0");
+
+                if (isHoliday(date)) {
+                    holidays++;
+                    const ex = calcExtrasForDate(date);
+                    extra50 += ex.extra50;
+                    extra100 += ex.extra100;
+                    continue;
+                }
+                if (isVacation(date)) {
+                    vacationDays++;
+                    continue;
+                }
+                if (isDayoff(date)) {
+                    dayoffs++;
+                    continue;
+                }
+                if (isWeekday(date)) {
+                    weekdays++;
+                    const minutes = minutesForDate(date);
+                    if (minutes > 0) workedDays++;
+                    if (minutes >= dailyGoal) okDays++;
+                    if (minutes < dailyGoal) pendingDays++;
+                    const ex = calcExtrasForDate(date);
+                    extra50 += ex.extra50;
+                    extra100 += ex.extra100;
+                } else {
+                    const minutes = minutesForDate(date);
+                    if (minutes > 0) {
+                        const ex = calcExtrasForDate(date);
+                        extra50 += ex.extra50;
+                        extra100 += ex.extra100;
+                    }
+                }
+            }
+
+            const meta = weekdays * dailyGoal;
+            const saldo = total - meta;
+            const pct = meta > 0 ? Math.round((total / meta) * 100) : 0;
+            const media = workedDays > 0 ? Math.round(total / workedDays) : 0;
+
+            return {
+                total, meta, saldo, pct, media,
+                workedDays, okDays, pendingDays,
+                holidays, dayoffs, vacationDays,
+                extra50, extra100, weekdays
+            };
+        }
+
+        function calcBancoAte(month) {
+            const [year, mon] = month.split("-").map(Number);
+            const startM = getStartMonth();
+            let banco = db.configuracoes.saldoInicial || 0;
+
+            const hoje = todayISO();
+            const mesAtual = hoje.substring(0, 7);
+
+            if (month < startM) return banco;
+
+            const [startYear, startMon] = startM.split("-").map(Number);
+
+            for (let y = startYear; y <= year; y++) {
+                const mesInicioLoop = (y === startYear) ? startMon : 1;
+                const mesFimLoop = (y === year) ? mon : 12;
+
+                for (let m = mesInicioLoop; m <= mesFimLoop; m++) {
+                    const mStr = y + "-" + String(m).padStart(2, "0");
+                    if (mStr > mesAtual) continue;
+                    const c = calc(mStr);
+                    banco += c.saldo;
+                }
+            }
+
+            return banco;
+        }
+
+        function renderDashboard() {
+            const c = calc(currentMonth);
+            const dailyGoal = getDailyGoal();
+            const banco = calcBancoAte(currentMonth);
+
+            document.getElementById("mTotal").textContent = minsToHours(c.total);
+            document.getElementById("mMeta").textContent = minsToHours(c.meta);
+            document.getElementById("mSaldo").textContent =
+                (c.saldo >= 0 ? "+" : "-") + minsToHours(Math.abs(c.saldo));
+            document.getElementById("mBanco").textContent =
+                (banco >= 0 ? "+" : "-") + minsToHours(Math.abs(banco));
+            document.getElementById("mPct").textContent = c.pct + "%";
+            document.getElementById("mMedia").textContent = minsToHours(c.media);
+            document.getElementById("mDias").textContent = c.workedDays;
+            document.getElementById("mExtra50").textContent = minsToHours(c.extra50);
+            document.getElementById("mExtra100").textContent = minsToHours(c.extra100);
+            document.getElementById("mFeriados").textContent = c.holidays;
+            document.getElementById("mFolgas").textContent = c.dayoffs;
+            document.getElementById("mFerias").textContent = c.vacationDays + " dias";
+
+            const cardSaldo = document.getElementById("cardSaldo");
+            cardSaldo.classList.remove("positive", "negative");
+            cardSaldo.classList.add(c.saldo >= 0 ? "positive" : "negative");
+
+            const cardBanco = document.getElementById("cardBanco");
+            cardBanco.classList.remove("positive", "negative");
+            cardBanco.classList.add(banco >= 0 ? "positive" : "negative");
+
+            const tbody = document.getElementById("dashboardTable");
+            tbody.innerHTML = "";
+            const days = daysInMonth(currentMonth);
+            const monthHasEntries = monthEntries(currentMonth).length > 0 ||
+                c.holidays > 0 || c.dayoffs > 0 || c.vacationDays > 0;
+
+            const hoje = todayISO();
+            const mesAtual = hoje.substring(0, 7);
+            const isMesAtual = currentMonth === mesAtual;
+
+            if (!monthHasEntries && !isMesAtual) {
+                tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Nada inserido ainda</td></tr>`;
+            }
+
+            for (let day = 1; day <= days; day++) {
+                const date = currentMonth + "-" + String(day).padStart(2, "0");
+                const minutes = minutesForDate(date);
+                const dayType = getDayType(date);
+                const isDiaFuturo = date > hoje;
+                let status = "";
+                let badgeClass = "";
+                let extraText = "-";
+
+                const ex = calcExtrasForDate(date);
+                if (ex.extra50 > 0) extraText = "+" + minsToHours(ex.extra50) + " (50%)";
+                if (ex.extra100 > 0) extraText = "+" + minsToHours(ex.extra100) + " (100%)";
+
+                if (isDiaFuturo && dayType === "trabalho") {
+                    status = "Aguardando";
+                    badgeClass = "badge-future";
+                } else if (dayType === "feriado") {
+                    status = "Feriado • " + getHolidayName(date);
+                    badgeClass = "badge-holiday";
+                } else if (dayType === "ferias") {
+                    status = "Férias";
+                    badgeClass = "badge-vacation";
+                } else if (dayType === "folga") {
+                    status = "Folga • " + getDayoffName(date);
+                    badgeClass = "badge-dayoff";
+                } else if (dayType === "fim de semana") {
+                    status = minutes > 0 ? "Trabalhou (extra)" : "Fim de semana";
+                    badgeClass = minutes > 0 ? "badge-overtime" : "badge-weekend";
+                } else if (minutes >= dailyGoal) {
+                    status = ex.extra50 > 0 ? "OK + extra" : "OK";
+                    badgeClass = ex.extra50 > 0 ? "badge-overtime" : "badge-ok";
+                } else if (minutes > 0) {
+                    status = "Pendente";
+                    badgeClass = "badge-pending";
+                } else {
+                    status = "Pendente";
+                    badgeClass = "badge-pending";
+                }
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${fmtDate(date)}</td>
+                    <td>${minutes > 0 ? minsToHours(minutes) : "-"}</td>
+                    <td>${extraText}</td>
+                    <td><span class="badge ${badgeClass}">${status}</span></td>
+                `;
+                tbody.appendChild(row);
+            }
+
+            const dayChart = document.getElementById("dayChart");
+            dayChart.innerHTML = "";
+
+            let temAlgoParaMostrar = false;
+            for (let day = 1; day <= days; day++) {
+                const date = currentMonth + "-" + String(day).padStart(2, "0");
+                const minutes = minutesForDate(date);
+                if (minutes > 0 || isHoliday(date) || isDayoff(date) || isVacation(date)) {
+                    temAlgoParaMostrar = true;
+                    break;
+                }
+            }
+
+            if (!temAlgoParaMostrar) {
+                dayChart.innerHTML = `<div class="empty-state">Nada inserido ainda</div>`;
+            }
+
+            for (let day = 1; day <= days; day++) {
+                const date = currentMonth + "-" + String(day).padStart(2, "0");
+                const minutes = minutesForDate(date);
+                if (minutes === 0 && !isHoliday(date) && !isDayoff(date) && !isVacation(date)) continue;
+
+                const dayType = getDayType(date);
+                let barColor = "var(--primary)";
+                if (dayType === "feriado") barColor = "var(--holiday)";
+                if (dayType === "folga") barColor = "var(--dayoff)";
+                if (dayType === "ferias") barColor = "var(--vacation)";
+                if (minutes > dailyGoal && dayType === "trabalho") barColor = "var(--overtime)";
+
+                const percentage = Math.min((minutes / dailyGoal) * 100, 100);
+                const item = document.createElement("div");
+                item.className = "bar-item";
+                item.innerHTML = `
+                    <div class="bar-label">${String(day).padStart(2, "0")}</div>
+                    <div class="bar">
+                        <div class="bar-fill" style="width:${percentage}%;background:${barColor}"></div>
+                    </div>
+                    <div class="bar-value">${minsToHours(minutes)}</div>
+                `;
+                dayChart.appendChild(item);
+            }
+
+            const categoryChart = document.getElementById("categoryChart");
+            categoryChart.innerHTML = "";
+
+            const categories = {};
+            monthEntries(currentMonth).forEach(function (item) {
+                categories[item.categoria] = (categories[item.categoria] || 0) + item.minutos;
+            });
+
+            if (Object.keys(categories).length === 0) {
+                categoryChart.innerHTML = `<div class="empty-state">Nada inserido ainda</div>`;
+            }
+
+            Object.keys(categories).forEach(function (cat) {
+                const minutes = categories[cat];
+                const pct = c.total > 0 ? (minutes / c.total) * 100 : 0;
+                const item = document.createElement("div");
+                item.className = "category-item";
+                item.innerHTML = `
+                    <div class="category-top">
+                        <span>${cat}</span>
+                        <strong>${minsToHours(minutes)} (${Math.round(pct)}%)</strong>
+                    </div>
+                    <div class="bar">
+                        <div class="bar-fill" style="width:${pct}%"></div>
+                    </div>
+                `;
+                categoryChart.appendChild(item);
+            });
+        }
+
+        function renderLancFilters() {
+            const select = document.getElementById("filterCategory");
+            select.innerHTML = `<option value="">Todas as categorias</option>`;
+            CATEGORIES.forEach(function (cat) {
+                const opt = document.createElement("option");
+                opt.value = cat;
+                opt.textContent = cat;
+                select.appendChild(opt);
+            });
+
+            const lancCat = document.getElementById("lCategoria");
+            lancCat.innerHTML = "";
+            CATEGORIES.forEach(function (cat) {
+                const opt = document.createElement("option");
+                opt.value = cat;
+                opt.textContent = cat;
+                lancCat.appendChild(opt);
+            });
+        }
+
+        function onPeriodTypeChange() {
+            const type = document.getElementById("filterPeriodType").value;
+            document.getElementById("periodDayGroup").style.display = type === "day" ? "block" : "none";
+            document.getElementById("periodMonthGroup").style.display = type === "month" ? "block" : "none";
+            document.getElementById("periodCustomGroup").style.display = type === "custom" ? "block" : "none";
+            document.getElementById("periodCustomGroup2").style.display = type === "custom" ? "block" : "none";
+            renderLanc();
+        }
+
+        function getFilteredLancamentos() {
+            const periodType = document.getElementById("filterPeriodType").value;
+            const fDate = document.getElementById("filterDate").value;
+            const fMonth = document.getElementById("filterMonth").value;
+            const fStart = document.getElementById("filterStart").value;
+            const fEnd = document.getElementById("filterEnd").value;
+            const fCat = document.getElementById("filterCategory").value;
+            const fType = document.getElementById("filterType").value;
+            const search = document.getElementById("filterSearch").value.toLowerCase().trim();
+
+            return db.lancamentos.filter(function (item) {
+                if (periodType === "day" && fDate && item.data !== fDate) return false;
+                if (periodType === "month" && fMonth && !item.data.startsWith(fMonth)) return false;
+                if (periodType === "custom") {
+                    if (fStart && item.data < fStart) return false;
+                    if (fEnd && item.data > fEnd) return false;
+                }
+
+                if (fCat && item.categoria !== fCat) return false;
+                if (fType) {
+                    const tipo = item.tipo || getDayType(item.data);
+                    if (tipo !== fType) return false;
+                }
+                if (search) {
+                    const atv = (item.atividade || "").toLowerCase();
+                    const obs = (item.obs || "").toLowerCase();
+                    if (!atv.includes(search) && !obs.includes(search)) return false;
+                }
+                return true;
+            });
+        }
+
+        function clearLancFilters() {
+            document.getElementById("filterPeriodType").value = "";
+            document.getElementById("filterDate").value = "";
+            document.getElementById("filterMonth").value = "";
+            document.getElementById("filterStart").value = "";
+            document.getElementById("filterEnd").value = "";
+            document.getElementById("filterCategory").value = "";
+            document.getElementById("filterType").value = "";
+            document.getElementById("filterSearch").value = "";
+            onPeriodTypeChange();
+        }
+
+        function renderLanc() {
+            const tbody = document.getElementById("lancTable");
+            tbody.innerHTML = "";
+
+            const filtered = getFilteredLancamentos();
+            filtered.sort(function (a, b) { return b.data.localeCompare(a.data); });
+
+            let totalFiltered = 0;
+            let totalExtras = 0;
+
+            filtered.forEach(function (item) {
+                totalFiltered += item.minutos;
+
+                const index = db.lancamentos.indexOf(item);
+                const tipo = item.tipo || "trabalho";
+                let tipoLabel = "Trabalho";
+                let badgeClass = "badge-ok";
+
+                if (tipo === "feriado") { tipoLabel = "Feriado"; badgeClass = "badge-holiday"; }
+                else if (tipo === "folga") { tipoLabel = "Folga"; badgeClass = "badge-dayoff"; }
+                else if (tipo === "ferias") { tipoLabel = "Férias"; badgeClass = "badge-vacation"; }
+
+                let extraText = "-";
+                if (tipo === "trabalho") {
+                    const ex = calcExtrasForDate(item.data);
+                    if (ex.extra50 > 0) { extraText = "+" + minsToHours(ex.extra50) + " 50%"; totalExtras += ex.extra50; }
+                    if (ex.extra100 > 0) { extraText = "+" + minsToHours(ex.extra100) + " 100%"; totalExtras += ex.extra100; }
+                }
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${fmtDate(item.data)}</td>
+                    <td>${item.atividade}</td>
+                    <td>${item.categoria}</td>
+                    <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
+                    <td>${minsToHours(item.minutos)}</td>
+                    <td>${extraText}</td>
+                    <td>${item.obs || "-"}</td>
+                    <td>
+                        <button class="table-btn" onclick="editLancamento(${index})">Editar</button>
+                        <button class="table-btn danger" onclick="deleteLanc(${index})">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById("filterCount").textContent = filtered.length;
+            document.getElementById("filterTotal").textContent = minsToHours(totalFiltered);
+            document.getElementById("filterExtras").textContent = minsToHours(totalExtras);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Nada inserido ainda</td></tr>`;
+            }
+        }
+
+        function toggleLancFields() {
+            const tipo = document.getElementById("lTipoDia").value;
+            const hoursField = document.getElementById("hoursField");
+            const atividadeField = document.getElementById("lAtividade");
+            const categoriaField = document.getElementById("lCategoria");
+
+            if (tipo === "trabalho") {
+                hoursField.style.display = "block";
+                atividadeField.disabled = false;
+                categoriaField.disabled = false;
+                atividadeField.placeholder = "Ex.: Reunião de alinhamento";
+            } else if (tipo === "feriado") {
+                hoursField.style.display = "none";
+                atividadeField.value = "Feriado";
+                atividadeField.disabled = true;
+                categoriaField.value = "Outros";
+                categoriaField.disabled = true;
+            } else if (tipo === "folga") {
+                hoursField.style.display = "none";
+                atividadeField.value = "Folga";
+                atividadeField.disabled = true;
+                categoriaField.value = "Outros";
+                categoriaField.disabled = true;
+            } else if (tipo === "ferias") {
+                hoursField.style.display = "none";
+                atividadeField.value = "Férias";
+                atividadeField.disabled = true;
+                categoriaField.value = "Outros";
+                categoriaField.disabled = true;
+            }
+        }
+
+        function openLancModal(index) {
+            editingLancIndex = (index !== undefined && index !== null) ? index : null;
+            const modal = document.getElementById("modalLanc");
+            modal.classList.add("show");
+
+            document.getElementById("modalLancTitle").textContent =
+                editingLancIndex === null ? "Novo lançamento" : "Editar lançamento";
+
+            if (editingLancIndex !== null) {
+                const item = db.lancamentos[editingLancIndex];
+                document.getElementById("lData").value = item.data;
+                document.getElementById("lTipoDia").value = item.tipo || "trabalho";
+                document.getElementById("lHoras").value = minsToTime(item.minutos) || "08:00";
+                document.getElementById("lAtividade").value = item.atividade;
+                document.getElementById("lCategoria").value = item.categoria;
+                document.getElementById("lObs").value = item.obs || "";
+            } else {
+                document.getElementById("lData").value = todayISO();
+                document.getElementById("lTipoDia").value = "trabalho";
+                document.getElementById("lHoras").value = "08:00";
+                document.getElementById("lAtividade").value = "";
+                document.getElementById("lAtividade").disabled = false;
+                document.getElementById("lCategoria").value = "Reunião";
+                document.getElementById("lCategoria").disabled = false;
+                document.getElementById("lObs").value = "";
+            }
+            toggleLancFields();
+        }
+
+        function saveLanc() {
+            const data = document.getElementById("lData").value;
+            const tipo = document.getElementById("lTipoDia").value;
+            let atividade = document.getElementById("lAtividade").value.trim();
+            const categoria = document.getElementById("lCategoria").value;
+            const obs = document.getElementById("lObs").value.trim();
+
+            if (!data) {
+                toast("Preencha a data.", "error");
+                return;
+            }
+
+            let minutos = 0;
+
+            if (tipo === "trabalho") {
+                const horas = document.getElementById("lHoras").value;
+                if (!horas || !atividade) {
+                    toast("Preencha as horas e a atividade.", "error");
+                    return;
+                }
+                minutos = hmToMinutes(horas);
+                if (minutos <= 0) {
+                    toast("Informe um total de horas válido.", "error");
+                    return;
+                }
+            } else if (tipo === "feriado") {
+                atividade = "Feriado";
+            } else if (tipo === "folga") {
+                atividade = "Folga";
+            } else if (tipo === "ferias") {
+                atividade = "Férias";
+            }
+
+            const item = {
+                data: data,
+                tipo: tipo,
+                atividade: atividade,
+                categoria: categoria,
+                minutos: minutos,
+                obs: obs
+            };
+
+            const duplicado = db.lancamentos.findIndex(function (l, i) {
+                if (editingLancIndex !== null && i === editingLancIndex) return false;
+                return l.data === data && l.atividade === atividade && l.tipo === tipo;
+            });
+
+            if (duplicado >= 0) {
+                if (!confirm("Já existe um lançamento com esta data, atividade e tipo. Deseja continuar?")) {
+                    return;
+                }
+            }
+
+            if (editingLancIndex === null) {
+                db.lancamentos.push(item);
+            } else {
+                db.lancamentos[editingLancIndex] = item;
+            }
+
+            saveDB();
+            closeModals();
+            renderAll();
+            toast("Lançamento salvo.", "success");
+        }
+
+        function editLancamento(index) {
+            openLancModal(index);
+        }
+
+        function deleteLanc(index) {
+            if (!confirm("Deseja realmente excluir este lançamento?")) return;
+            db.lancamentos.splice(index, 1);
+            saveDB();
+            renderAll();
+            toast("Lançamento excluído.", "success");
+        }
+
+        function renderResumo() {
+            const month = document.getElementById("monthResumo").value;
+            const tbody = document.getElementById("resumoTable");
+            tbody.innerHTML = "";
+
+            if (!month) return;
+
+            const c = calc(month);
+            const banco = calcBancoAte(month);
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${month}</td>
+                <td>${minsToHours(c.total)}</td>
+                <td>${minsToHours(c.meta)}</td>
+                <td>${(c.saldo >= 0 ? "+" : "-")} ${minsToHours(Math.abs(c.saldo))}</td>
+                <td>${(banco >= 0 ? "+" : "-")} ${minsToHours(Math.abs(banco))}</td>
+                <td>${minsToHours(c.extra50)}</td>
+                <td>${minsToHours(c.extra100)}</td>
+                <td>${c.pct}%</td>
+                <td>${c.holidays}</td>
+                <td>${c.dayoffs}</td>
+                <td>${c.vacationDays}</td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function addHoliday() {
+            const date = document.getElementById("holidayDate").value;
+            const name = document.getElementById("holidayName").value.trim();
+
+            if (!date || !name) {
+                toast("Preencha a data e o nome do feriado.", "error");
+                return;
+            }
+
+            if (db.feriados.some(function (f) { return f.data === date; })) {
+                toast("Já existe um feriado nesta data.", "warning");
+                return;
+            }
+
+            db.feriados.push({ data: date, nome: name });
+            db.feriados.sort(function (a, b) { return a.data.localeCompare(b.data); });
+            saveDB();
+
+            document.getElementById("holidayDate").value = "";
+            document.getElementById("holidayName").value = "";
+            renderHolidays();
+            renderAll();
+            toast("Feriado adicionado.", "success");
+        }
+
+        function deleteHoliday(index) {
+            if (!confirm("Remover este feriado?")) return;
+            db.feriados.splice(index, 1);
+            saveDB();
+            renderHolidays();
+            renderAll();
+        }
+
+        function renderHolidays() {
+            const tbody = document.getElementById("holidayTable");
+            tbody.innerHTML = "";
+
+            if (db.feriados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="empty-state">Nenhum feriado cadastrado</td></tr>`;
+                return;
+            }
+
+            db.feriados.forEach(function (f, index) {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${fmtDate(f.data)}</td>
+                    <td>${f.nome}</td>
+                    <td><button class="table-btn danger" onclick="deleteHoliday(${index})">Excluir</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getEaster(year) {
+            const a = year % 19;
+            const b = Math.floor(year / 100);
+            const c = year % 100;
+            const d = Math.floor(b / 4);
+            const e = b % 4;
+            const f = Math.floor((b + 8) / 25);
+            const g = Math.floor((b - f + 1) / 3);
+            const h = (19 * a + b - d - g + 15) % 30;
+            const i = Math.floor(c / 4);
+            const k = c % 4;
+            const l = (32 + 2 * e + 2 * i - h - k) % 7;
+            const m = Math.floor((a + 11 * h + 22 * l) / 451);
+            const month = Math.floor((h + l - 7 * m + 114) / 31);
+            const day = ((h + l - 7 * m + 114) % 31) + 1;
+            return new Date(year, month - 1, day);
+        }
+
+        function addDays(date, days) {
+            const d = new Date(date);
+            d.setDate(d.getDate() + days);
+            return d;
+        }
+
+        function toISO(d) {
+            return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        }
+
+        function importNationalHolidays() {
+            const year = prompt("Ano dos feriados a importar:", new Date().getFullYear());
+            if (!year) return;
+            const y = Number(year);
+            if (!y || y < 1900 || y > 2100) {
+                toast("Ano inválido.", "error");
+                return;
+            }
+
+            const easter = getEaster(y);
+
+            const nacionais = [
+                { data: y + "-01-01", nome: "Confraternização Universal" },
+                { data: toISO(addDays(easter, -48)), nome: "Carnaval (segunda)" },
+                { data: toISO(addDays(easter, -47)), nome: "Carnaval (terça)" },
+                { data: toISO(addDays(easter, -46)), nome: "Quarta-feira de Cinzas" },
+                { data: y + "-04-21", nome: "Tiradentes" },
+                { data: y + "-05-01", nome: "Dia do Trabalho" },
+                { data: toISO(addDays(easter, -2)), nome: "Sexta-feira Santa" },
+                { data: toISO(addDays(easter, 60)), nome: "Corpus Christi" },
+                { data: y + "-09-07", nome: "Independência do Brasil" },
+                { data: y + "-10-12", nome: "Nossa Senhora Aparecida" },
+                { data: y + "-11-02", nome: "Finados" },
+                { data: y + "-11-15", nome: "Proclamação da República" },
+                { data: y + "-11-20", nome: "Consciência Negra" },
+                { data: y + "-12-25", nome: "Natal" }
+            ];
+
+            let added = 0;
+            nacionais.forEach(function (h) {
+                if (!db.feriados.some(function (f) { return f.data === h.data; })) {
+                    db.feriados.push(h);
+                    added++;
+                }
+            });
+
+            db.feriados.sort(function (a, b) { return a.data.localeCompare(b.data); });
+            saveDB();
+            renderHolidays();
+            renderAll();
+            toast(added + " feriados importados para " + y, "success");
+        }
+
+        function addDayoff() {
+            const date = document.getElementById("dayoffDate").value;
+            const name = document.getElementById("dayoffName").value.trim();
+
+            if (!date || !name) {
+                toast("Preencha a data e o motivo da folga.", "error");
+                return;
+            }
+
+            if (db.folgas.some(function (f) { return f.data === date; })) {
+                toast("Já existe uma folga nesta data.", "warning");
+                return;
+            }
+
+            db.folgas.push({ data: date, motivo: name });
+            db.folgas.sort(function (a, b) { return a.data.localeCompare(b.data); });
+            saveDB();
+
+            document.getElementById("dayoffDate").value = "";
+            document.getElementById("dayoffName").value = "";
+            renderDayoffs();
+            renderAll();
+            toast("Folga adicionada.", "success");
+        }
+
+        function deleteDayoff(index) {
+            if (!confirm("Remover esta folga?")) return;
+            db.folgas.splice(index, 1);
+            saveDB();
+            renderDayoffs();
+            renderAll();
+        }
+
+        function renderDayoffs() {
+            const tbody = document.getElementById("dayoffTable");
+            tbody.innerHTML = "";
+
+            if (db.folgas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="empty-state">Nenhuma folga cadastrada</td></tr>`;
+                return;
+            }
+
+            db.folgas.forEach(function (f, index) {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${fmtDate(f.data)}</td>
+                    <td>${f.motivo}</td>
+                    <td><button class="table-btn danger" onclick="deleteDayoff(${index})">Excluir</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function addVacation() {
+            const inicio = document.getElementById("vacationStart").value;
+            const fim = document.getElementById("vacationEnd").value;
+
+            if (!inicio || !fim) {
+                toast("Preencha início e fim.", "error");
+                return;
+            }
+            if (fim < inicio) {
+                toast("Data fim deve ser depois do início.", "error");
+                return;
+            }
+
+            db.ferias.push({ inicio: inicio, fim: fim });
+            db.ferias.sort(function (a, b) { return a.inicio.localeCompare(b.inicio); });
+            saveDB();
+
+            document.getElementById("vacationStart").value = "";
+            document.getElementById("vacationEnd").value = "";
+            renderVacations();
+            renderAll();
+            toast("Férias adicionadas.", "success");
+        }
+
+        function deleteVacation(index) {
+            if (!confirm("Remover este período de férias?")) return;
+            db.ferias.splice(index, 1);
+            saveDB();
+            renderVacations();
+            renderAll();
+        }
+
+        function renderVacations() {
+            const tbody = document.getElementById("vacationTable");
+            tbody.innerHTML = "";
+
+            if (db.ferias.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Nenhum período cadastrado</td></tr>`;
+                return;
+            }
+
+            db.ferias.forEach(function (f, index) {
+                const d1 = new Date(f.inicio + "T12:00:00");
+                const d2 = new Date(f.fim + "T12:00:00");
+                const dias = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${fmtDate(f.inicio)}</td>
+                    <td>${fmtDate(f.fim)}</td>
+                    <td>${dias}</td>
+                    <td><button class="table-btn danger" onclick="deleteVacation(${index})">Excluir</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function saveSettings() {
+            const horas = document.getElementById("dailyHours").value;
+            if (horas) db.configuracoes.horasDiarias = hmToMinutes(horas);
+
+            const saldoInicial = document.getElementById("initialBalance").value;
+            db.configuracoes.saldoInicial = Number(saldoInicial) || 0;
+
+            const startMonth = document.getElementById("startMonth").value;
+            if (startMonth) db.configuracoes.startMonth = startMonth;
+
+            saveDB();
+            renderAll();
+            toast("Configurações salvas.", "success");
+        }
+
+        function exportData() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            const month = currentMonth;
+            const entries = monthEntries(month);
+            let total = 0;
+
+            entries.forEach(function (item) { total += Number(item.minutos); });
+
+            const c = calc(month);
+            const banco = calcBancoAte(month);
+
+            pdf.setFontSize(18);
+            pdf.text("Controle de Horas • Trabalho", 20, 20);
+            pdf.setFontSize(11);
+            pdf.text(`Mês: ${month}`, 20, 30);
+
+            pdf.setFontSize(14);
+            pdf.text("Resumo", 20, 45);
+
+            pdf.setFontSize(10);
+            pdf.text(`Total realizado: ${minsToHours(total)}`, 20, 55);
+            pdf.text(`Meta: ${minsToHours(c.meta)}`, 20, 62);
+            pdf.text(`Saldo do mês: ${(c.saldo >= 0 ? "+" : "-")} ${minsToHours(Math.abs(c.saldo))}`, 20, 69);
+            pdf.text(`Banco de horas acumulado: ${(banco >= 0 ? "+" : "-")} ${minsToHours(Math.abs(banco))}`, 20, 76);
+            pdf.text(`Progresso: ${c.pct}%`, 20, 83);
+            pdf.text(`Dias trabalhados: ${c.workedDays}`, 20, 90);
+            pdf.text(`Média diária: ${minsToHours(c.media)}`, 20, 97);
+            pdf.text(`Horas extras 50%: ${minsToHours(c.extra50)}`, 20, 104);
+            pdf.text(`Horas extras 100%: ${minsToHours(c.extra100)}`, 20, 111);
+            pdf.text(`Feriados: ${c.holidays}  |  Folgas: ${c.dayoffs}  |  Férias: ${c.vacationDays} dias`, 20, 118);
+
+            pdf.setFontSize(14);
+            pdf.text("Lançamentos", 20, 134);
+
+            let y = 146;
+
+            if (entries.length === 0) {
+                pdf.setFontSize(10);
+                pdf.text("Nada inserido.", 20, y);
+            } else {
+                entries.forEach(function (item, index) {
+                    if (y > 270) { pdf.addPage(); y = 20; }
+
+                    const tipo = item.tipo || "trabalho";
+                    pdf.setFontSize(10);
+                    pdf.text(`${index + 1}. ${fmtDate(item.data)} [${tipo}]`, 20, y);
+                    pdf.text(`Atividade: ${item.atividade || "-"}`, 25, y + 7);
+                    pdf.text(`Categoria: ${item.categoria || "-"}`, 25, y + 14);
+                    pdf.text(`Horas: ${minsToHours(item.minutos)}`, 25, y + 21);
+                    const obs = pdf.splitTextToSize(`Observação: ${item.obs || "-"}`, 160);
+                    pdf.text(obs, 25, y + 28);
+                    y += 38 + ((obs.length - 1) * 5);
+                });
+            }
+
+            const pageCount = pdf.internal.getNumberOfPages();
+            for (let page = 1; page <= pageCount; page++) {
+                pdf.setPage(page);
+                pdf.setFontSize(8);
+                pdf.text(`Página ${page} de ${pageCount}`, 20, 290);
+            }
+
+            pdf.save(`controle-horas-${month}.pdf`);
+        }
+
+        function exportCSV() {
+            const rows = [
+                ["Data", "Tipo", "Atividade", "Categoria", "Horas (min)", "Horas (formatado)", "Observação"]
+            ];
+
+            const sorted = db.lancamentos.slice().sort(function (a, b) {
+                return a.data.localeCompare(b.data);
+            });
+
+            sorted.forEach(function (item) {
+                rows.push([
+                    item.data,
+                    item.tipo || "trabalho",
+                    item.atividade || "",
+                    item.categoria || "",
+                    item.minutos,
+                    minsToHours(item.minutos),
+                    item.obs || ""
+                ]);
+            });
+
+            const csv = rows.map(function (r) {
+                return r.map(function (cell) {
+                    const s = String(cell).replace(/"/g, '""');
+                    return '"' + s + '"';
+                }).join(",");
+            }).join("\n");
+
+            const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "controle-horas-" + todayISO() + ".csv";
+            a.click();
+            URL.revokeObjectURL(url);
+            toast("CSV exportado.", "success");
+        }
+
+        function exportJSON() {
+            const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "backup-controle-horas-" + todayISO() + ".json";
+            a.click();
+            URL.revokeObjectURL(url);
+            toast("Backup exportado.", "success");
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    db = {
+                        lancamentos: Array.isArray(imported.lancamentos) ? imported.lancamentos : [],
+                        feriados: Array.isArray(imported.feriados) ? imported.feriados : [],
+                        folgas: Array.isArray(imported.folgas) ? imported.folgas : [],
+                        ferias: Array.isArray(imported.ferias) ? imported.ferias : [],
+                        configuracoes: imported.configuracoes || { horasDiarias: 480, tema: "azul", dark: false, saldoInicial: 0, startMonth: DEFAULT_START_MONTH }
+                    };
+                    if (!db.configuracoes.horasDiarias) db.configuracoes.horasDiarias = 480;
+                    if (!db.configuracoes.tema) db.configuracoes.tema = "azul";
+                    if (typeof db.configuracoes.dark === "undefined") db.configuracoes.dark = false;
+                    if (typeof db.configuracoes.saldoInicial === "undefined") db.configuracoes.saldoInicial = 0;
+                    if (!db.configuracoes.startMonth) db.configuracoes.startMonth = DEFAULT_START_MONTH;
+
+                    saveDB();
+                    applyTheme(db.configuracoes.tema);
+                    document.body.setAttribute("data-dark", db.configuracoes.dark ? "true" : "false");
+                    document.getElementById("darkBtn").textContent = db.configuracoes.dark ? "☀️" : "🌙";
+                    document.getElementById("dailyHours").value = minsToTime(db.configuracoes.horasDiarias);
+                    document.getElementById("initialBalance").value = db.configuracoes.saldoInicial;
+                    document.getElementById("startMonth").value = db.configuracoes.startMonth;
+                    renderHolidays();
+                    renderDayoffs();
+                    renderVacations();
+                    renderAll();
+                    toast("Dados importados com sucesso!", "success");
+                } catch (error) {
+                    toast("Não foi possível importar o arquivo.", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAll() {
+            if (!confirm("ATENÇÃO: isso apagará TODOS os dados. Deseja continuar?")) return;
+            if (!confirm("Tem certeza absoluta? Esta ação não pode ser desfeita.")) return;
+
+            db = JSON.parse(JSON.stringify(INITIAL));
+            saveDB();
+            location.reload();
+        }
+
+        function showPage(page, button) {
+            currentPage = page;
+            document.querySelectorAll(".page").forEach(function (p) { p.classList.remove("active"); });
+            document.getElementById(page).classList.add("active");
+            document.querySelectorAll(".nav-btn").forEach(function (b) { b.classList.remove("active"); });
+            if (button) button.classList.add("active");
+            renderAll();
+        }
+
+        function setMonth(month) {
+            currentMonth = month;
+            document.getElementById("monthDash").value = month;
+            renderAll();
+        }
+
+        function closeModals() {
+            document.querySelectorAll(".modal").forEach(function (m) { m.classList.remove("show"); });
+            editingLancIndex = null;
+        }
+
+        // ===== AJUDA =====
+        function openHelp() {
+            document.getElementById("helpOverlay").classList.add("show");
+            document.getElementById("helpPanel").classList.add("show");
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeHelp() {
+            document.getElementById("helpOverlay").classList.remove("show");
+            document.getElementById("helpPanel").classList.remove("show");
+            document.body.style.overflow = "";
+        }
+
+        function showHelpTab(tab, btn) {
+            document.querySelectorAll(".help-content").forEach(function (c) {
+                c.classList.remove("active");
+            });
+            document.getElementById("help-" + tab).classList.add("active");
+
+            document.querySelectorAll(".help-tab").forEach(function (t) {
+                t.classList.remove("active");
+            });
+            if (btn) btn.classList.add("active");
+
+            // Rolar para o topo do conteúdo
+            document.querySelector(".help-body").scrollTop = 0;
+        }
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+                closeModals();
+                closeHelp();
+            }
+            if (e.key === "F1") {
+                e.preventDefault();
+                openHelp();
+            }
+            if (e.key === "?" && e.ctrlKey) {
+                e.preventDefault();
+                openHelp();
+            }
+        });
+
+        document.querySelectorAll(".modal").forEach(function (modal) {
+            modal.addEventListener("click", function (e) {
+                if (e.target === modal) closeModals();
+            });
+        });
+
+        function renderAll() {
+            renderDashboard();
+            renderLanc();
+            renderResumo();
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            applyTheme(db.configuracoes.tema || "azul");
+            document.body.setAttribute("data-dark", db.configuracoes.dark ? "true" : "false");
+            document.getElementById("darkBtn").textContent = db.configuracoes.dark ? "☀️" : "🌙";
+
+            document.querySelectorAll(".theme-swatch").forEach(function (el) {
+                el.addEventListener("click", function () {
+                    applyTheme(this.dataset.theme);
+                });
+            });
+
+            document.getElementById("dailyHours").value = minsToTime(db.configuracoes.horasDiarias || 480);
+            document.getElementById("initialBalance").value = db.configuracoes.saldoInicial || 0;
+            document.getElementById("startMonth").value = db.configuracoes.startMonth || DEFAULT_START_MONTH;
+
+            renderLancFilters();
+
+            document.getElementById("monthDash").value = currentMonth;
+            document.getElementById("monthResumo").value = currentMonth;
+
+            renderHolidays();
+            renderDayoffs();
+            renderVacations();
+
+            renderAll();
+        });
+    </script>
+</body>
+
+</html>
