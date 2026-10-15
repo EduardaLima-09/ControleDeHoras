@@ -40,6 +40,9 @@
         <button class="nav-btn" onclick="showPage('resumo', this)">
             Resumo mensal
         </button>
+        <button class="nav-btn" onclick="showPage('calendario', this)">
+            Feriados & Férias
+        </button>
     </nav>
 
     <main>
@@ -62,7 +65,8 @@
                 <p>
                     Cadastre suas atividades na aba Lançamentos.
                     O sistema calcula automaticamente suas horas,
-                    meta mensal e saldo.
+                    meta mensal e saldo. Feriados e férias são
+                    descontados da meta automaticamente.
                 </p>
             </div>
 
@@ -101,13 +105,13 @@
                 </div>
 
                 <div class="metric-card">
-                    <span>Dias OK</span>
-                    <strong id="mOk">0</strong>
+                    <span>Feriados no mês</span>
+                    <strong id="mFeriados">0</strong>
                 </div>
 
                 <div class="metric-card">
-                    <span>Pendentes</span>
-                    <strong id="mPend">0</strong>
+                    <span>Dias de férias</span>
+                    <strong id="mFerias">0</strong>
                 </div>
 
             </div>
@@ -276,6 +280,77 @@
                 </div>
             </div>
         </section>
+
+        <!--FERIADOS E FÉRIAS-->
+
+        <section id="calendario" class="page">
+
+            <div class="page-header">
+                <div>
+                    <h1>Feriados & Férias</h1>
+                    <p>Cadastre feriados e períodos de férias — eles são descontados da meta.</p>
+                </div>
+            </div>
+
+            <!-- FERIADOS -->
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2>Feriados</h2>
+                        <p>Dias em que não há expediente.</p>
+                    </div>
+
+                    <button class="primary-btn" onclick="openFeriadoModal()">
+                        + Novo feriado
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feriadosTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FÉRIAS -->
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2>Férias</h2>
+                        <p>Períodos contínuos sem expediente.</p>
+                    </div>
+
+                    <button class="primary-btn" onclick="openFeriasModal()">
+                        + Novo período
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Início</th>
+                                <th>Fim</th>
+                                <th>Dias</th>
+                                <th>Descrição</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feriasTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
     </main>
 
     <!--MODAL DE LANÇAMENTO-->
@@ -321,12 +396,86 @@
         </div>
     </div>
 
+    <!--MODAL DE FERIADO-->
+
+    <div id="modalFeriado" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="feriadoModalTitle">Novo feriado</h2>
+                <button onclick="closeModals()">×</button>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label for="ferData">Data</label>
+                    <input type="date" id="ferData">
+                </div>
+
+                <div class="full">
+                    <label for="ferDesc">Descrição</label>
+                    <input type="text" id="ferDesc" placeholder="Ex.: Nossa Senhora Aparecida">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="secondary-btn" onclick="closeModals()">Cancelar</button>
+                <button class="primary-btn" onclick="saveFeriado()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!--MODAL DE FÉRIAS-->
+
+    <div id="modalFerias" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="feriasModalTitle">Novo período de férias</h2>
+                <button onclick="closeModals()">×</button>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label for="fInicio">Início</label>
+                    <input type="date" id="fInicio">
+                </div>
+
+                <div>
+                    <label for="fFim">Fim</label>
+                    <input type="date" id="fFim">
+                </div>
+
+                <div class="full">
+                    <label for="fDesc">Descrição</label>
+                    <input type="text" id="fDesc" placeholder="Ex.: Férias de verão">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="secondary-btn" onclick="closeModals()">Cancelar</button>
+                <button class="primary-btn" onclick="saveFerias()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <!--JAVASCRIPT-->
 
     <script>
 
         const INITIAL = {
-            lancamentos: []
+            lancamentos: [],
+            feriados: [
+                { data: "2026-01-01", descricao: "Confraternização Universal" },
+                { data: "2026-04-03", descricao: "Sexta-feira Santa" },
+                { data: "2026-04-21", descricao: "Tiradentes" },
+                { data: "2026-05-01", descricao: "Dia do Trabalho" },
+                { data: "2026-09-07", descricao: "Independência" },
+                { data: "2026-10-12", descricao: "Nossa Senhora Aparecida" },
+                { data: "2026-11-02", descricao: "Finados" },
+                { data: "2026-11-15", descricao: "Proclamação da República" },
+                { data: "2026-11-20", descricao: "Consciência Negra" },
+                { data: "2026-12-25", descricao: "Natal" }
+            ],
+            ferias: []
         };
 
         const CATEGORIES = [
@@ -353,6 +502,14 @@
             db.lancamentos = [];
         }
 
+        if (!Array.isArray(db.feriados)) {
+            db.feriados = [];
+        }
+
+        if (!Array.isArray(db.ferias)) {
+            db.ferias = [];
+        }
+
         if (db.agenda) {
             delete db.agenda;
             saveDB();
@@ -360,6 +517,8 @@
 
         let currentMonth = "2026-10";
         let editingLancIndex = null;
+        let editingFeriadoIndex = null;
+        let editingFeriasIndex = null;
 
         function saveDB() {
             localStorage.setItem(
@@ -495,6 +654,53 @@
                 }, 0);
         }
 
+        // -------- FERIADOS / FÉRIAS --------
+
+        function isFeriado(date) {
+            return db.feriados.some(function (f) {
+                return f.data === date;
+            });
+        }
+
+        function isFerias(date) {
+            return db.ferias.some(function (f) {
+                return date >= f.inicio && date <= f.fim;
+            });
+        }
+
+        // Dia útil real = dia de semana E não feriado E não férias
+        function isDiaUtilReal(date) {
+            return (
+                isWeekday(date) &&
+                !isFeriado(date) &&
+                !isFerias(date)
+            );
+        }
+
+        function feriadosNoMes(month) {
+            return db.feriados.filter(function (f) {
+                return f.data.startsWith(month);
+            });
+        }
+
+        function diasFeriasNoMes(month) {
+            const dias = daysInMonth(month);
+            let count = 0;
+
+            for (let day = 1; day <= dias; day++) {
+                const date =
+                    month + "-" + String(day).padStart(2, "0");
+
+                if (isFerias(date)) {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        // -------- CÁLCULOS --------
+
         function calc(month) {
 
             const entries =
@@ -513,8 +719,6 @@
 
             let weekdays = 0;
             let workedDays = 0;
-            let okDays = 0;
-            let pendingDays = 0;
 
             for (
                 let day = 1;
@@ -528,7 +732,7 @@
                     String(day).padStart(2, "0");
 
 
-                if (isWeekday(date)) {
+                if (isDiaUtilReal(date)) {
 
                     weekdays++;
                     const minutes =
@@ -536,16 +740,6 @@
 
                     if (minutes > 0) {
                         workedDays++;
-                    }
-
-
-                    if (minutes === 360) {
-                        okDays++;
-                    }
-
-
-                    if (minutes < 360) {
-                        pendingDays++;
                     }
 
                 }
@@ -576,8 +770,8 @@
                 pct,
                 media,
                 workedDays,
-                okDays,
-                pendingDays
+                feriadosCount: feriadosNoMes(month).length,
+                feriasDias: diasFeriasNoMes(month)
             };
 
         }
@@ -593,11 +787,11 @@
             document.getElementById("mPct").textContent = c.pct + "%";
             document.getElementById("mMedia").textContent = minsToHours(c.media);
             document.getElementById("mDias").textContent = c.workedDays;
-            document.getElementById("mOk").textContent = c.okDays;
-            document.getElementById("mPend").textContent = c.pendingDays;
+            document.getElementById("mFeriados").textContent = c.feriadosCount;
+            document.getElementById("mFerias").textContent = c.feriasDias;
 
             const tbody = document.getElementById("dashboardTable");
-                tbody.innerHTML = "";
+            tbody.innerHTML = "";
             const days = daysInMonth(currentMonth);
             const monthHasEntries = monthEntries(currentMonth).length > 0;
 
@@ -628,6 +822,12 @@
 
                 if (!isWeekday(date)) {
                     status = "Fim de semana";
+
+                } else if (isFeriado(date)) {
+                    status = "Feriado";
+
+                } else if (isFerias(date)) {
+                    status = "Férias";
 
                 } else if (minutes === 360) {
                     status = "OK";
@@ -1128,6 +1328,245 @@
             tbody.appendChild(row);
         }
 
+        // -------- RENDER FERIADOS E FÉRIAS --------
+
+        function renderFeriados() {
+            const tbody =
+                document.getElementById("feriadosTable");
+
+            if (!tbody) return;
+
+            tbody.innerHTML = "";
+
+            const sorted =
+                db.feriados.slice().sort(function (a, b) {
+                    return a.data.localeCompare(b.data);
+                });
+
+            sorted.forEach(function (item) {
+                const index =
+                    db.feriados.indexOf(item);
+
+                const row =
+                    document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${fmtDate(item.data)}</td>
+                    <td>${item.descricao || "-"}</td>
+                    <td>
+                        <button
+                            class="table-btn"
+                            onclick="editFeriado(${index})"
+                        >
+                            Editar
+                        </button>
+
+                        <button
+                            class="table-btn danger"
+                            onclick="deleteFeriado(${index})"
+                        >
+                            Excluir
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (sorted.length === 0) {
+                const row =
+                    document.createElement("tr");
+                row.innerHTML = `
+                    <td colspan="3" class="empty-state">
+                        Nenhum feriado cadastrado
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        function renderFerias() {
+            const tbody =
+                document.getElementById("feriasTable");
+
+            if (!tbody) return;
+
+            tbody.innerHTML = "";
+
+            const sorted =
+                db.ferias.slice().sort(function (a, b) {
+                    return a.inicio.localeCompare(b.inicio);
+                });
+
+            sorted.forEach(function (item) {
+                const index =
+                    db.ferias.indexOf(item);
+
+                const dias =
+                    Math.floor(
+                        (new Date(item.fim + "T12:00:00") -
+                         new Date(item.inicio + "T12:00:00"))
+                        / (1000 * 60 * 60 * 24)
+                    ) + 1;
+
+                const row =
+                    document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${fmtDate(item.inicio)}</td>
+                    <td>${fmtDate(item.fim)}</td>
+                    <td>${dias}</td>
+                    <td>${item.descricao || "-"}</td>
+                    <td>
+                        <button
+                            class="table-btn"
+                            onclick="editFerias(${index})"
+                        >
+                            Editar
+                        </button>
+
+                        <button
+                            class="table-btn danger"
+                            onclick="deleteFerias(${index})"
+                        >
+                            Excluir
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (sorted.length === 0) {
+                const row =
+                    document.createElement("tr");
+                row.innerHTML = `
+                    <td colspan="5" class="empty-state">
+                        Nenhum período de férias cadastrado
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        // -------- MODAIS FERIADOS / FÉRIAS --------
+
+        function openFeriadoModal(index = null) {
+            editingFeriadoIndex = index;
+
+            document.getElementById("feriadoModalTitle").textContent =
+                index === null ? "Novo feriado" : "Editar feriado";
+
+            document.getElementById("modalFeriado").classList.add("show");
+
+            if (index !== null) {
+                const item = db.feriados[index];
+                document.getElementById("ferData").value = item.data;
+                document.getElementById("ferDesc").value = item.descricao || "";
+            } else {
+                document.getElementById("ferData").value = "";
+                document.getElementById("ferDesc").value = "";
+            }
+        }
+
+        function saveFeriado() {
+            const data = document.getElementById("ferData").value;
+            const descricao = document.getElementById("ferDesc").value.trim();
+
+            if (!data) {
+                alert("Informe a data do feriado.");
+                return;
+            }
+
+            const item = { data, descricao };
+
+            if (editingFeriadoIndex === null) {
+                db.feriados.push(item);
+            } else {
+                db.feriados[editingFeriadoIndex] = item;
+            }
+
+            saveDB();
+            closeModals();
+            renderAll();
+        }
+
+        function editFeriado(index) {
+            openFeriadoModal(index);
+        }
+
+        function deleteFeriado(index) {
+            if (!confirm("Deseja realmente excluir este feriado?")) {
+                return;
+            }
+
+            db.feriados.splice(index, 1);
+            saveDB();
+            renderAll();
+        }
+
+        function openFeriasModal(index = null) {
+            editingFeriasIndex = index;
+
+            document.getElementById("feriasModalTitle").textContent =
+                index === null ? "Novo período de férias" : "Editar férias";
+
+            document.getElementById("modalFerias").classList.add("show");
+
+            if (index !== null) {
+                const item = db.ferias[index];
+                document.getElementById("fInicio").value = item.inicio;
+                document.getElementById("fFim").value = item.fim;
+                document.getElementById("fDesc").value = item.descricao || "";
+            } else {
+                document.getElementById("fInicio").value = "";
+                document.getElementById("fFim").value = "";
+                document.getElementById("fDesc").value = "";
+            }
+        }
+
+        function saveFerias() {
+            const inicio = document.getElementById("fInicio").value;
+            const fim = document.getElementById("fFim").value;
+            const descricao = document.getElementById("fDesc").value.trim();
+
+            if (!inicio || !fim) {
+                alert("Informe início e fim das férias.");
+                return;
+            }
+
+            if (fim < inicio) {
+                alert("A data final não pode ser antes da inicial.");
+                return;
+            }
+
+            const item = { inicio, fim, descricao };
+
+            if (editingFeriasIndex === null) {
+                db.ferias.push(item);
+            } else {
+                db.ferias[editingFeriasIndex] = item;
+            }
+
+            saveDB();
+            closeModals();
+            renderAll();
+        }
+
+        function editFerias(index) {
+            openFeriasModal(index);
+        }
+
+        function deleteFerias(index) {
+            if (!confirm("Deseja realmente excluir este período de férias?")) {
+                return;
+            }
+
+            db.ferias.splice(index, 1);
+            saveDB();
+            renderAll();
+        }
+
+        // -------- MODAIS / UTIL --------
+
         function closeModals() {
             document
                 .querySelectorAll(".modal")
@@ -1135,6 +1574,8 @@
                     modal.classList.remove("show");
                 });
             editingLancIndex = null;
+            editingFeriadoIndex = null;
+            editingFeriasIndex = null;
         }
 
         function esc(event) {
@@ -1168,10 +1609,12 @@
             });
 
             const workedDays = Object.keys(days).length;
-            const average = workedDays > 0 ? Math.round(total / workedDays): 0;
-            const meta = Object.keys(days).length * 6 * 60;
+            const average = workedDays > 0 ? Math.round(total / workedDays) : 0;
+
+            const c = calc(month);
+            const meta = c.meta;
             const saldo = total - meta;
-            const progresso = meta > 0 ? Math.min(100, Math.round((total / meta) * 100)) : 0;
+            const progresso = c.pct;
 
             pdf.setFontSize(18);
             pdf.text("Controle de Horas", 20, 20);
@@ -1189,11 +1632,13 @@
             pdf.text(`Progresso: ${progresso}%`, 20, 76);
             pdf.text(`Dias trabalhados: ${workedDays}`, 20, 83);
             pdf.text(`Média diária: ${minsToHours(average)}`, 20, 90);
+            pdf.text(`Feriados no mês: ${c.feriadosCount}`, 20, 97);
+            pdf.text(`Dias de férias no mês: ${c.feriasDias}`, 20, 104);
 
             pdf.setFontSize(14);
-            pdf.text("Lançamentos", 20, 106);
+            pdf.text("Lançamentos", 20, 120);
 
-            let y = 118;
+            let y = 132;
 
             if (entries.length === 0) {
                 pdf.setFontSize(10);
@@ -1258,9 +1703,9 @@
                         );
 
                     db = {
-                        lancamentos: Array.isArray(imported.lancamentos)
-                            ? imported.lancamentos
-                            : []
+                        lancamentos: Array.isArray(imported.lancamentos) ? imported.lancamentos : [],
+                        feriados: Array.isArray(imported.feriados) ? imported.feriados : [],
+                        ferias: Array.isArray(imported.ferias) ? imported.ferias : []
                     };
 
                     saveDB();
@@ -1277,12 +1722,16 @@
                 }
             };
             reader.readAsText(file);
+
+            event.target.value = "";
         }
 
         function renderAll() {
             renderDashboard();
             renderLanc();
             renderResumo();
+            renderFeriados();
+            renderFerias();
         }
 
         renderLancFilters();
